@@ -6,9 +6,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-yarn.lock
 
+# Dependency directories and lock files
 node_modules
+yarn.lock
 dist
 dist-ssr
 *.local
@@ -23,6 +24,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
 old
 old/
+yarn.lock
