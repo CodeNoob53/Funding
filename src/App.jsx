@@ -41,11 +41,20 @@ function App() {
 
   const handleSelectToken = (token) => {
     setSelectedToken(token);
+    console.log('Token selected in App:', token);
   };
 
   const handleSelectRate = (token, exchange, rate) => {
     console.log(`App: Selected token - ${token.symbol}, Exchange: ${exchange}, Rate: ${rate}`);
-    setSelectedToken(token);
+    
+    // Оновлюємо вибраний токен із додатковими параметрами
+    const updatedToken = {
+      ...token,
+      selectedExchange: exchange,
+      selectedRate: rate
+    };
+    
+    setSelectedToken(updatedToken);
   };
 
   const formatUpdateTime = (date) => {

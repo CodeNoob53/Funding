@@ -10,21 +10,21 @@ function TokenItem({ token, onClick, onRateClick }) {
     const isHighValue = Math.abs(parseFloat(value)) >= 0.15;
     
     return (
-      <span
+      <button
         onClick={(e) => {
           e.stopPropagation();
-          console.log(`Clicked on ${exchange} rate: ${rate}`);
           onRateClick(token, exchange, rate);
         }}
         className={`
-          cursor-pointer px-2 py-1 rounded-md transition-colors duration-200
-          ${isPositive ? 'text-green-500' : 'text-red-500'} 
+          px-2 py-1 rounded-md transition-colors duration-200 w-full
+          ${isPositive ? 'text-green-500 hover:bg-green-500/10' : 'text-red-500 hover:bg-red-500/10'} 
           ${isHighValue ? 'font-bold' : ''}
-          hover:bg-gray-200 dark:hover:bg-gray-700 hover:shadow-sm !important
+          hover:shadow-sm
         `}
+        title={`Використати ${exchange} фандинг для калькулятора`}
       >
-        {value}%
-      </span>
+        <span>{value}%</span>
+      </button>
     );
   };
 

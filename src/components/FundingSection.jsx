@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import TokenItem from './TokenItem';
+import ExchangeIcon from './ExchangeIcon';
 import { FiSliders, FiSearch } from 'react-icons/fi';
 
 function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelectRate }) {
@@ -113,11 +114,36 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
             <thead>
               <tr className="border-b border-[rgb(var(--border))] bg-[rgb(var(--card))]">
                 <th className="table-cell table-header text-left py-3 px-4 sm:px-6 font-semibold">Символ</th>
-                <th className="table-cell table-header text-right py-3 px-4 sm:px-6 font-semibold">Binance</th>
-                <th className="table-cell table-header text-right py-3 px-4 sm:px-6 font-semibold">OKX</th>
-                <th className="table-cell table-header text-right py-3 px-4 sm:px-6 font-semibold">Bybit</th>
-                <th className="table-cell table-header text-right py-3 px-4 sm:px-6 font-semibold">Gate.io</th>
-                <th className="table-cell table-header text-right py-3 px-4 sm:px-6 font-semibold">MEXC</th>
+                <th className="table-cell table-header text-right py-3 px-4 sm:px-6 font-semibold">
+                  <div className="flex items-center justify-end gap-1">
+                    <ExchangeIcon exchange="Binance" size={16} />
+                    <span>Binance</span>
+                  </div>
+                </th>
+                <th className="table-cell table-header text-right py-3 px-4 sm:px-6 font-semibold">
+                  <div className="flex items-center justify-end gap-1">
+                    <ExchangeIcon exchange="OKX" size={16} />
+                    <span>OKX</span>
+                  </div>
+                </th>
+                <th className="table-cell table-header text-right py-3 px-4 sm:px-6 font-semibold">
+                  <div className="flex items-center justify-end gap-1">
+                    <ExchangeIcon exchange="Bybit" size={16} />
+                    <span>Bybit</span>
+                  </div>
+                </th>
+                <th className="table-cell table-header text-right py-3 px-4 sm:px-6 font-semibold">
+                  <div className="flex items-center justify-end gap-1">
+                    <ExchangeIcon exchange="Gate.io" size={16} />
+                    <span>Gate.io</span>
+                  </div>
+                </th>
+                <th className="table-cell table-header text-right py-3 px-4 sm:px-6 font-semibold">
+                  <div className="flex items-center justify-end gap-1">
+                    <ExchangeIcon exchange="MEXC" size={16} />
+                    <span>MEXC</span>
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[rgb(var(--border))]">

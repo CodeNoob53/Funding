@@ -78,7 +78,13 @@
 .crypto-icon {
   display: inline-block;
   vertical-align: middle;
-  flex-shrink: 0; /* Забезпечуємо, що іконка не стискається */
+  flex-shrink: 0;
+}
+
+.exchange-icon {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 0.5rem; /* Відступ між іконкою та текстом */
 }
 
 .animate-fade {
