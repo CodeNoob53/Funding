@@ -1,4 +1,6 @@
+// src/components/TokenItem.jsx
 import PropTypes from 'prop-types';
+import CryptoIcon from './CryptoIcon';
 
 function TokenItem({ token, onClick }) {
   // Функція для форматування ставки фандингу
@@ -34,14 +36,7 @@ function TokenItem({ token, onClick }) {
   return (
     <tr className="table-row-hover" onClick={() => onClick(token)}>
       <td className="table-cell font-medium flex items-center gap-2">
-        <img 
-          src={`https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/32/color/${token.symbol.toLowerCase()}@2x.png`}
-          alt={token.symbol}
-          className="w-6 h-6"
-          onError={(e) => {
-            e.target.src = 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/32/color/generic@2x.png';
-          }}
-        />
+        <CryptoIcon symbol={token.symbol} size={6} />
         <div>
           <div>{token.symbol}</div>
           {apr && (

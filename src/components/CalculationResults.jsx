@@ -1,3 +1,4 @@
+// src/components/CalculationResults.jsx
 import PropTypes from 'prop-types';
 
 function CalculationResults({ data }) {
@@ -21,6 +22,12 @@ function CalculationResults({ data }) {
     info: PropTypes.string
   };
 
+  // Функція для безпечного форматування чисел
+  const safeFormat = (num, prefix = '', suffix = '', decimals = 2) => {
+    if (num === undefined || num === null) return `${prefix}0${suffix}`;
+    return `${prefix}${parseFloat(num).toFixed(decimals)}${suffix}`;
+  };
+
   return (
     <div className="space-y-3 animate-slide">
       {data.selectedSymbol && (
@@ -31,31 +38,31 @@ function CalculationResults({ data }) {
       
       <ResultRow 
         label="📊 Початкова маржа"
-        value={`$${data.initialMargin.toFixed(2)}`}
+        value={safeFormat(data.initialMargin, '$')}
         info="Мінімальна сума для відкриття позиції"
       />
       
       <ResultRow 
         label="🛡️ Рекомендована маржа"
-        value={`$${data.recommendedMargin.toFixed(2)}`}
+        value={safeFormat(data.recommendedMargin, '$')}
         info="Рекомендована сума для безпечної торгівлі"
       />
       
       <ResultRow 
         label="🚨 Ціна ліквідації"
-        value={`$${data.liquidationPrice.toFixed(2)}`}
+        value={safeFormat(data.liquidationPrice, '$')}
         info="Ціна, при якій позиція буде ліквідована"
       />
       
       <ResultRow 
         label="📉 Відсоток до ліквідації"
-        value={`${data.liquidationMove.toFixed(2)}%`}
+        value={safeFormat(data.liquidationMove, '', '%')}
         info="Необхідна зміна ціни для ліквідації"
       />
       
       <ResultRow 
         label="💸 Загальні комісії"
-        value={`$${data.totalFees.toFixed(2)}`}
+        value={safeFormat(data.totalFees, '$')}
         info="Сума комісій за відкриття та закриття"
       />
       
@@ -64,28 +71,28 @@ function CalculationResults({ data }) {
         
         <ResultRow 
           label="🪙 За 8 годин"
-          value={`$${data.estimatedFundingProfit.toFixed(2)}`}
+          value={safeFormat(data.estimatedFundingProfit, '$')}
           isHighlight={true}
         />
         
         <ResultRow 
           label="🪙 За день"
-          value={`$${data.estimatedDailyFundingProfit.toFixed(2)}`}
+          value={safeFormat(data.estimatedDailyFundingProfit, '$')}
         />
         
         <ResultRow 
           label="🪙 За місяць"
-          value={`$${data.estimatedMonthlyFundingProfit.toFixed(2)}`}
+          value={safeFormat(data.estimatedMonthlyFundingProfit, '$')}
         />
         
         <ResultRow 
           label="🪙 За рік"
-          value={`$${data.estimatedYearlyFundingProfit.toFixed(2)}`}
+          value={safeFormat(data.estimatedYearlyFundingProfit, '$')}
         />
         
         <ResultRow 
           label="📈 Річна дохідність (APR)"
-          value={`${data.fundingApr.toFixed(2)}%`}
+          value={safeFormat(data.fundingApr, '', '%')}
           isHighlight={true}
           info="Річна процентна ставка від фандингу"
         />
@@ -94,19 +101,21 @@ function CalculationResults({ data }) {
   );
 }
 
+// Оновлені PropTypes - зробимо всі властивості необов'язковими, оскільки 
+// ми додали захисне форматування для уникнення помилок
 CalculationResults.propTypes = {
   data: PropTypes.shape({
     selectedSymbol: PropTypes.string,
-    initialMargin: PropTypes.number.isRequired,
-    recommendedMargin: PropTypes.number.isRequired,
-    liquidationPrice: PropTypes.number.isRequired,
-    liquidationMove: PropTypes.number.isRequired,
-    totalFees: PropTypes.number.isRequired,
-    estimatedFundingProfit: PropTypes.number.isRequired,
-    estimatedDailyFundingProfit: PropTypes.number.isRequired,
-    estimatedMonthlyFundingProfit: PropTypes.number.isRequired,
-    estimatedYearlyFundingProfit: PropTypes.number.isRequired,
-    fundingApr: PropTypes.number.isRequired
+    initialMargin: PropTypes.number,
+    recommendedMargin: PropTypes.number,
+    liquidationPrice: PropTypes.number,
+    liquidationMove: PropTypes.number,
+    totalFees: PropTypes.number,
+    estimatedFundingProfit: PropTypes.number,
+    estimatedDailyFundingProfit: PropTypes.number,
+    estimatedMonthlyFundingProfit: PropTypes.number,
+    estimatedYearlyFundingProfit: PropTypes.number,
+    fundingApr: PropTypes.number
   }).isRequired,
 };
 

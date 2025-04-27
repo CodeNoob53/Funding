@@ -1,3 +1,4 @@
+// src/components/CalculatorSection.jsx
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import CalculatorForm from './CalculatorForm';
@@ -14,61 +15,7 @@ function CalculatorSection({ selectedToken }) {
     fundingRate: '',
   });
 
-  useEffect(() => {
-    if (selectedToken) {
-      const newValues = {
-        ...formValues,
-        entryPrice: selectedToken.indexPrice || '',
-        fundingRate: selectedToken.fundingRate 
-          ? (selectedToken.fundingRate * 100).toFixed(4)
-          : '',
-      };
-      setFormValues(newValues);
-      
-      // Автоматично розраховуємо, якщо всі необхідні поля заповнені
-      if (
-        selectedToken.indexPrice && 
-        selectedToken.fundingRate && 
-        formValues.leverage && 
-        formValues.positionSize
-      ) {
-        // Симулюємо форму з оновленими значеннями
-        handleCalculateWithValues(newValues);
-      }
-    }
-  }, [selectedToken]);
-
-  const handleInputChange = (e) => {
-    const { id, value } = e.target;
-    setFormValues(prev => ({ ...prev, [id]: value }));
-  };
-  
-  // Допоміжна функція для розрахунку з конкретними значеннями
-  const handleCalculateWithValues = (values) => {
-    const entryPrice = parseFloat(values.entryPrice);
-    const leverage = parseFloat(values.leverage);
-    const positionSize = parseFloat(values.positionSize);
-    const openFee = parseFloat(values.openFee) / 100;
-    const closeFee = parseFloat(values.closeFee) / 100;
-    const fundingRate = parseFloat(values.fundingRate) / 100;
-    
-    calculateResults(entryPrice, leverage, positionSize, openFee, closeFee, fundingRate);
-  };
-
-  const handleCalculate = (e) => {
-    e.preventDefault();
-    
-    const entryPrice = parseFloat(formValues.entryPrice);
-    const leverage = parseFloat(formValues.leverage);
-    const positionSize = parseFloat(formValues.positionSize);
-    const openFee = parseFloat(formValues.openFee) / 100;
-    const closeFee = parseFloat(formValues.closeFee) / 100;
-    const fundingRate = parseFloat(formValues.fundingRate) / 100;
-    
-    calculateResults(entryPrice, leverage, positionSize, openFee, closeFee, fundingRate);
-  };
-  
-  // Виділена функція розрахунку результатів
+  // Функція для розрахунку результатів
   const calculateResults = (entryPrice, leverage, positionSize, openFee, closeFee, fundingRate) => {
     const initialMargin = positionSize / leverage;
     const recommendedMargin = initialMargin * 1.5; // Рекомендуємо 150% від мінімальної маржі
@@ -98,6 +45,60 @@ function CalculatorSection({ selectedToken }) {
       fundingApr,
       selectedSymbol: selectedToken?.symbol || null,
     });
+  };
+
+  // Допоміжна функція для розрахунку з конкретними значеннями
+  const handleCalculateWithValues = (values) => {
+    const entryPrice = parseFloat(values.entryPrice);
+    const leverage = parseFloat(values.leverage);
+    const positionSize = parseFloat(values.positionSize);
+    const openFee = parseFloat(values.openFee) / 100;
+    const closeFee = parseFloat(values.closeFee) / 100;
+    const fundingRate = parseFloat(values.fundingRate) / 100;
+    
+    calculateResults(entryPrice, leverage, positionSize, openFee, closeFee, fundingRate);
+  };
+
+  useEffect(() => {
+    if (selectedToken) {
+      const newValues = {
+        ...formValues,
+        entryPrice: selectedToken.indexPrice || '',
+        fundingRate: selectedToken.fundingRate 
+          ? (selectedToken.fundingRate * 100).toFixed(4)
+          : '',
+      };
+      setFormValues(newValues);
+      
+      // Автоматично розраховуємо, якщо всі необхідні поля заповнені
+      if (
+        selectedToken.indexPrice && 
+        selectedToken.fundingRate && 
+        formValues.leverage && 
+        formValues.positionSize
+      ) {
+        // Симулюємо форму з оновленими значеннями
+        handleCalculateWithValues(newValues);
+      }
+    }
+  }, [selectedToken, formValues.leverage, formValues.positionSize]);
+
+  const handleInputChange = (e) => {
+    const { id, value } = e.target;
+    setFormValues(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleCalculate = (e) => {
+    e.preventDefault();
+    
+    const entryPrice = parseFloat(formValues.entryPrice);
+    const leverage = parseFloat(formValues.leverage);
+    const positionSize = parseFloat(formValues.positionSize);
+    const openFee = parseFloat(formValues.openFee) / 100;
+    const closeFee = parseFloat(formValues.closeFee) / 100;
+    const fundingRate = parseFloat(formValues.fundingRate) / 100;
+    
+    calculateResults(entryPrice, leverage, positionSize, openFee, closeFee, fundingRate);
   };
 
   return (
