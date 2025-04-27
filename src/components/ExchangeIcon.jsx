@@ -1,83 +1,67 @@
+// src/components/ExchangeIcon.jsx
 import PropTypes from 'prop-types';
-import { FaExchangeAlt } from 'react-icons/fa';
+import * as simpleIcons from 'simple-icons/icons';
 
-function ExchangeIcon({ exchange, size = 16 }) {
-  const iconStyle = {
-    width: `${size}px`,
-    height: `${size}px`,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  };
+function ExchangeIcon({ exchange, size = 32, color = 'currentColor' }) {
+  const normalizedExchange = exchange.toLowerCase().replace(/\s+/g, '');
 
-  // Функція для створення SVG іконок
-  const renderSvgIcon = (paths, color) => (
+  // Спроба знайти іконку
+  const icon = Object.values(simpleIcons).find((icon) => 
+    icon.slug === normalizedExchange || icon.title.toLowerCase() === exchange.toLowerCase()
+  );
+
+  if (!icon) {
+    // Якщо біржа не знайдена — рендеримо заглушку
+    return (
+      <div
+        style={{
+          width: size,
+          height: size,
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#ccc',
+          borderRadius: '50%',
+          fontSize: size * 0.4,
+          color: '#fff'
+        }}
+        title={exchange}
+      >
+        ?
+      </div>
+    );
+  }
+
+  return (
     <div
-      style={iconStyle}
+      style={{
+        width: size,
+        height: size,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
       title={exchange}
     >
-      <svg 
-        role="img" 
-        viewBox="0 0 24 24" 
-        width={size} 
+      <svg
+        role="img"
+        viewBox="0 0 24 24"
+        width={size}
         height={size}
         fill={color}
         xmlns="http://www.w3.org/2000/svg"
       >
-        {paths}
+        <title>{icon.title}</title>
+        <path d={icon.path} />
       </svg>
     </div>
   );
-
-  // Відображаємо відповідну іконку в залежності від біржі
-  switch (exchange) {
-    case 'Binance':
-      return renderSvgIcon(
-        <path d="M16.624 13.9202l2.7175 2.7154-7.353 7.353-7.353-7.352 2.7175-2.7164 4.6355 4.6595 4.6356-4.6595zm4.6366-4.6366l2.7164 2.7164-2.7164 2.7175-2.7164-2.7164 2.7164-2.7175zm-9.272 0l2.7163 2.7164-2.7164 2.7175-2.7164-2.7164 2.7164-2.7175zm-9.2722 0l2.7164 2.7164-2.7164 2.7175-2.7164-2.7164 2.7164-2.7175zm9.2722-9.2722l7.353 7.353-7.353 7.353-7.353-7.352 7.353-7.354z" />,
-        '#F3BA2F'
-      );
-    
-    case 'OKX':
-      return renderSvgIcon(
-        <path d="M6.97 6.97A7.97 7.97 0 0 1 16.97 5.54a.5.5 0 0 0 .66.08A9.96 9.96 0 0 0 5.54 17.7a.5.5 0 0 0 .08-.66 7.97 7.97 0 0 1 1.35-10.07ZM17.03 17.03A7.97 7.97 0 0 1 7.03 18.46a.5.5 0 0 0-.66-.08A9.96 9.96 0 0 0 18.46 6.3a.5.5 0 0 0-.08.66 7.97 7.97 0 0 1-1.35 10.07Z" />,
-        '#121212'
-      );
-    
-    case 'Bybit':
-      return renderSvgIcon(
-        <path d="M10.586 24H2.326C1.042 24 0 22.958 0 21.674V13.414C0 12.749 0.265 12.113 0.732 11.646L11.644 0.733C12.604 -0.227 14.165 -0.226 15.123 0.733L23.267 8.877C24.226 9.836 24.225 11.397 23.267 12.356L12.354 23.268C11.887 23.735 11.251 24 10.586 24ZM8.414 10.586C8.414 9.482 7.518 8.586 6.414 8.586C5.31 8.586 4.414 9.482 4.414 10.586C4.414 11.69 5.31 12.586 6.414 12.586C7.518 12.586 8.414 11.69 8.414 10.586Z" />,
-        '#000000'
-      );
-    
-    case 'Gate.io':
-      return renderSvgIcon(
-        <path d="M4.391 15.362h-.914v1.524h.857v.665H3.477v3.086H2.53v-3.086H1.396v-.665h1.134v-1.676H1.32v-.665h1.21v-.227c0-1.447.838-2.35 2.172-2.35.762 0 1.258.306 1.506.419v.799c-.343-.227-.724-.513-1.258-.513-.722 0-1.22.399-1.22 1.542v.306h5.027v.665h-4.1l-.266.176zm7.713-1.067c.914 0 1.676.665 1.676 1.524 0 .858-.762 1.523-1.676 1.523-.914 0-1.677-.665-1.677-1.523 0-.859.763-1.524 1.677-1.524zm0 3.693c.914 0 1.676.666 1.676 1.524 0 .858-.762 1.524-1.676 1.524-.914 0-1.677-.666-1.677-1.524 0-.858.763-1.524 1.677-1.524zm4.69-2.168c.914 0 1.677.665 1.677 1.524 0 .858-.763 1.523-1.677 1.523-.914 0-1.676-.665-1.676-1.523 0-.859.762-1.524 1.676-1.524zm4.635-1.525c0 .858-.763 1.524-1.677 1.524-.914 0-1.676-.666-1.676-1.524 0-.858.762-1.524 1.676-1.524.914 0 1.677.666 1.677 1.524zm-8.133-1.829c.857 0 1.524.667 1.524 1.525 0 .857-.667 1.524-1.524 1.524-.857 0-1.524-.667-1.524-1.524 0-.858.667-1.525 1.524-1.525zM22.604 20.58c0 .857-.667 1.523-1.525 1.523-.857 0-1.523-.666-1.523-1.524 0-.857.666-1.524 1.523-1.524.858 0 1.525.667 1.525 1.524zm-4.367-5.2c0 .757-.61 1.371-1.364 1.371s-1.365-.614-1.365-1.371c0-.757.611-1.37 1.365-1.37s1.364.613 1.364 1.37z" />,
-        '#E30000'
-      );
-      
-    case 'MEXC':
-      return renderSvgIcon(
-        <path d="M19.1 4.9H14v2.5h7.6V4.9H19.1z M2.4 4.9v2.5H10V4.9H4.9H2.4z M9.9 18.2c0-0.3 0-0.6 0-0.9c-0.1-1.7-1.4-3-3.1-3.1c-2-0.1-3.7 1.4-3.8 3.4c-0.1 2 1.4 3.7 3.4 3.8s3.7-1.4 3.8-3.4C9.9 18.1 9.9 18.2 9.9 18.2L9.9 18.2z M21 21.5c2 0 3.5-1.6 3.5-3.5c0-2-1.6-3.5-3.5-3.5c-2 0-3.5 1.6-3.5 3.5C17.4 19.9 19 21.5 21 21.5L21 21.5z M10.6 10.6h2.9v2.9h-2.9V10.6z M13.4 10.6v2.9h-2.9v-2.9L13.4 10.6z" />,
-        '#2B50ED'
-      );
-      
-    default:
-      // Фолбек, якщо іконка не знайдена
-      return (
-        <div 
-          className="flex items-center justify-center bg-gray-700 rounded-full text-white"
-          style={iconStyle}
-          title={exchange || 'Exchange'}
-        >
-          <FaExchangeAlt size={size * 0.6} />
-        </div>
-      );
-  }
 }
 
 ExchangeIcon.propTypes = {
   exchange: PropTypes.string.isRequired,
-  size: PropTypes.number
+  size: PropTypes.number,
+  color: PropTypes.string,
 };
 
 export default ExchangeIcon;
