@@ -9,20 +9,20 @@ function Header() {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl md:text-2xl font-bold">
-            Funding Calculator
+            Калькулятор Фандингу
           </h1>
           
           <div className="flex items-center gap-4">
             <button 
               onClick={toggleTheme}
               className="btn-ghost p-2 rounded-full"
-              aria-label="Toggle theme"
+              aria-label="Змінити тему"
             >
               {theme === 'dark' ? <FiSun size={20} /> : <FiMoon size={20} />}
             </button>
             
             <span className="hidden md:block text-sm opacity-70">
-              Real-time funding rates
+              Актуальні ставки фандингу
             </span>
           </div>
         </div>

@@ -11,6 +11,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedToken, setSelectedToken] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const theme = useThemeStore((state) => state.theme);
 
   useEffect(() => {
@@ -23,16 +24,18 @@ function App() {
         setIsLoading(true);
         const data = await fetchFundingRates();
         setFundingData(data);
+        setLastUpdated(new Date());
         setError(null);
       } catch (err) {
         setError('Не вдалося завантажити дані про фандинг');
-        console.error('Error fetching funding rates:', err);
+        console.error('Помилка отримання даних про фандинг:', err);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadFundingData();
+    // Оновлюємо дані кожні 15 хвилин
     const intervalId = setInterval(loadFundingData, 15 * 60 * 1000);
     return () => clearInterval(intervalId);
   }, []);
@@ -41,11 +44,26 @@ function App() {
     setSelectedToken(token);
   };
 
+  // Форматування часу оновлення
+  const formatUpdateTime = (date) => {
+    if (!date) return '';
+    
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       
       <main className="flex-1 container mx-auto px-4 py-8">
+        {lastUpdated && (
+          <div className="mb-4 text-sm text-[rgb(var(--foreground))/60 flex justify-end">
+            Останнє оновлення: {formatUpdateTime(lastUpdated)}
+          </div>
+        )}
+        
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="lg:w-3/4">
             <FundingSection 

@@ -5,7 +5,7 @@ function CalculatorForm({ formValues, onChange, onSubmit }) {
     <form className="space-y-4" onSubmit={onSubmit}>
       <div>
         <label className="block mb-1 font-medium" htmlFor="entryPrice">
-          Entry Price ($):
+          Ціна входу ($):
         </label>
         <input
           type="number"
@@ -20,7 +20,7 @@ function CalculatorForm({ formValues, onChange, onSubmit }) {
       
       <div>
         <label className="block mb-1 font-medium" htmlFor="leverage">
-          Leverage:
+          Кредитне плече:
         </label>
         <input
           type="number"
@@ -35,7 +35,7 @@ function CalculatorForm({ formValues, onChange, onSubmit }) {
       
       <div>
         <label className="block mb-1 font-medium" htmlFor="positionSize">
-          Position Size ($):
+          Розмір позиції ($):
         </label>
         <input
           type="number"
@@ -51,7 +51,7 @@ function CalculatorForm({ formValues, onChange, onSubmit }) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block mb-1 font-medium" htmlFor="openFee">
-            Open Fee (%):
+            Комісія відкриття (%):
           </label>
           <input
             type="number"
@@ -65,7 +65,7 @@ function CalculatorForm({ formValues, onChange, onSubmit }) {
         
         <div>
           <label className="block mb-1 font-medium" htmlFor="closeFee">
-            Close Fee (%):
+            Комісія закриття (%):
           </label>
           <input
             type="number"
@@ -80,7 +80,7 @@ function CalculatorForm({ formValues, onChange, onSubmit }) {
       
       <div>
         <label className="block mb-1 font-medium" htmlFor="fundingRate">
-          Funding Rate (% per 8h):
+          Ставка фандингу (% / 8г):
         </label>
         <input
           type="number"
@@ -94,7 +94,7 @@ function CalculatorForm({ formValues, onChange, onSubmit }) {
       </div>
       
       <button type="submit" className="btn-primary w-full mt-6">
-        Calculate
+        Розрахувати
       </button>
     </form>
   );
