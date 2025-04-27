@@ -3,36 +3,33 @@ import PropTypes from 'prop-types';
 import TokenItem from './TokenItem';
 import { FiSliders, FiSearch } from 'react-icons/fi';
 
-function FundingSection({ fundingData, isLoading, error, onSelectToken }) {
+function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelectRate }) {
   const [filterThreshold, setFilterThreshold] = useState(0.15);
   const [showFilter, setShowFilter] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Фільтруємо та сортуємо токени
   const filteredTokens = fundingData
     .filter(token => {
-      // Перевіряємо наявність фандингу
       if (!token.fundingRate) return false;
-      
-      // Фільтруємо за пошуком
       if (searchQuery && !token.symbol.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
       }
-      
-      // Фільтруємо за пороговим значенням фандингу (абсолютне значення)
       const absRate = Math.abs(token.fundingRate * 100);
       return absRate >= filterThreshold;
     })
     .sort((a, b) => Math.abs(b.fundingRate) - Math.abs(a.fundingRate));
 
-  // Обробник зміни порогового значення
   const handleThresholdChange = (e) => {
     setFilterThreshold(parseFloat(e.target.value));
   };
 
-  // Обробник пошуку
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
+  };
+
+  const handleRateClick = (token, exchange, rate) => {
+    console.log(`FundingSection: Selecting rate for ${token.symbol} on ${exchange}: ${rate}`);
+    onSelectRate(token, exchange, rate);
   };
 
   return (
@@ -113,7 +110,7 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken }) {
             <thead>
               <tr className="border-b border-[rgb(var(--border))]">
                 <th className="table-cell table-header text-left">Символ</th>
-                <th className="table-cell table-header text-right">Binance</th>
+                <th className="table Ary-cell table-header text-right">Binance</th>
                 <th className="table-cell table-header text-right">OKX</th>
                 <th className="table-cell table-header text-right">Bybit</th>
                 <th className="table-cell table-header text-right">Gate.io</th>
@@ -126,6 +123,7 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken }) {
                   key={token.symbol} 
                   token={token}
                   onClick={() => onSelectToken(token)}
+                  onRateClick={handleRateClick}
                 />
               ))}
               {!isLoading && filteredTokens.length === 0 && (
@@ -164,6 +162,7 @@ FundingSection.propTypes = {
   isLoading: PropTypes.bool.isRequired,
   error: PropTypes.oneOfType([PropTypes.string, PropTypes.node]),
   onSelectToken: PropTypes.func.isRequired,
+  onSelectRate: PropTypes.func.isRequired,
 };
 
 export default FundingSection;

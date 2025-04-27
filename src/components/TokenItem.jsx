@@ -1,10 +1,8 @@
-// src/components/TokenItem.jsx
 import PropTypes from 'prop-types';
 import CryptoIcon from './CryptoIcon';
 
-function TokenItem({ token, onClick }) {
-  // Функція для форматування ставки фандингу
-  const formatRate = (rate) => {
+function TokenItem({ token, onClick, onRateClick }) {
+  const formatRate = (rate, exchange) => {
     if (rate === undefined || rate === null || rate === '-') return '-';
     
     const value = (parseFloat(rate) * 100).toFixed(4);
@@ -12,25 +10,30 @@ function TokenItem({ token, onClick }) {
     const isHighValue = Math.abs(parseFloat(value)) >= 0.15;
     
     return (
-      <span className={`
-        ${isPositive ? 'text-green-500' : 'text-red-500'} 
-        ${isHighValue ? 'font-bold' : ''}
-      `}>
+      <span
+        onClick={(e) => {
+          e.stopPropagation(); // Зупиняємо bubbling, щоб клік на рядок не спрацьовував
+          console.log(`Clicked on ${exchange} rate: ${rate}`); // Дебаг-логування
+          onRateClick(token, exchange, rate);
+        }}
+        className={`
+          cursor-pointer px-2 py-1 rounded-md transition-colors duration-200
+          ${isPositive ? 'text-green-500' : 'text-red-500'} 
+          ${isHighValue ? 'font-bold' : ''}
+          hover:bg-gray-200 dark:hover:bg-gray-700 hover:shadow-sm !important
+        `}
+      >
         {value}%
       </span>
     );
   };
 
-  // Обчислення APR (Annual Percentage Rate) з урахуванням того, що фандинг стягується кожні 8 годин
   const calculateApr = (rate) => {
     if (rate === undefined || rate === null || rate === '-') return null;
-    
-    // 3 рази на день * 365 днів
     const annualizedRate = parseFloat(rate) * 3 * 365;
     return (annualizedRate * 100).toFixed(2);
   };
 
-  // Отримуємо APR для потенційного відображення
   const apr = calculateApr(token.fundingRate);
 
   return (
@@ -46,11 +49,11 @@ function TokenItem({ token, onClick }) {
           )}
         </div>
       </td>
-      <td className="table-cell text-right">{formatRate(token.binanceFunding)}</td>
-      <td className="table-cell text-right">{formatRate(token.okexFunding)}</td>
-      <td className="table-cell text-right">{formatRate(token.bybitFunding)}</td>
-      <td className="table-cell text-right">{formatRate(token.gateFunding)}</td>
-      <td className="table-cell text-right">{formatRate(token.mexcFunding)}</td>
+      <td className="table-cell text-right">{formatRate(token.binanceFunding, 'Binance')}</td>
+      <td className="table-cell text-right">{formatRate(token.okexFunding, 'OKX')}</td>
+      <td className="table-cell text-right">{formatRate(token.bybitFunding, 'Bybit')}</td>
+      <td className="table-cell text-right">{formatRate(token.gateFunding, 'Gate.io')}</td>
+      <td className="table-cell text-right">{formatRate(token.mexcFunding, 'MEXC')}</td>
     </tr>
   );
 }
@@ -66,6 +69,7 @@ TokenItem.propTypes = {
     mexcFunding: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   }).isRequired,
   onClick: PropTypes.func.isRequired,
+  onRateClick: PropTypes.func.isRequired,
 };
 
 export default TokenItem;

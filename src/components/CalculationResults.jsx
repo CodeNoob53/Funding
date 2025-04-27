@@ -1,4 +1,3 @@
-// src/components/CalculationResults.jsx
 import PropTypes from 'prop-types';
 
 function CalculationResults({ data }) {
@@ -32,7 +31,7 @@ function CalculationResults({ data }) {
     <div className="space-y-3 animate-slide">
       {data.selectedSymbol && (
         <h3 className="text-lg font-semibold mb-4">
-          Результати для {data.selectedSymbol}
+          Результати для {data.selectedSymbol} ({data.selectedExchange}, {data.positionType === 'long' ? 'Long' : 'Short'})
         </h3>
       )}
       
@@ -50,7 +49,7 @@ function CalculationResults({ data }) {
       
       <ResultRow 
         label="🚨 Ціна ліквідації"
-        value={safeFormat(data.liquidationPrice, '$')}
+        value={safeFormat(data.liquidationPrice, '$', '', 6)}
         info="Ціна, при якій позиція буде ліквідована"
       />
       
@@ -79,30 +78,11 @@ function CalculationResults({ data }) {
           label="🪙 За день"
           value={safeFormat(data.estimatedDailyFundingProfit, '$')}
         />
-        
-        <ResultRow 
-          label="🪙 За місяць"
-          value={safeFormat(data.estimatedMonthlyFundingProfit, '$')}
-        />
-        
-        <ResultRow 
-          label="🪙 За рік"
-          value={safeFormat(data.estimatedYearlyFundingProfit, '$')}
-        />
-        
-        <ResultRow 
-          label="📈 Річна дохідність (APR)"
-          value={safeFormat(data.fundingApr, '', '%')}
-          isHighlight={true}
-          info="Річна процентна ставка від фандингу"
-        />
       </div>
     </div>
   );
 }
 
-// Оновлені PropTypes - зробимо всі властивості необов'язковими, оскільки 
-// ми додали захисне форматування для уникнення помилок
 CalculationResults.propTypes = {
   data: PropTypes.shape({
     selectedSymbol: PropTypes.string,
@@ -113,9 +93,8 @@ CalculationResults.propTypes = {
     totalFees: PropTypes.number,
     estimatedFundingProfit: PropTypes.number,
     estimatedDailyFundingProfit: PropTypes.number,
-    estimatedMonthlyFundingProfit: PropTypes.number,
-    estimatedYearlyFundingProfit: PropTypes.number,
-    fundingApr: PropTypes.number
+    selectedExchange: PropTypes.string,
+    positionType: PropTypes.oneOf(['long', 'short']),
   }).isRequired,
 };
 

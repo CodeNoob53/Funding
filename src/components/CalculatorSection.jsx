@@ -1,11 +1,12 @@
-// src/components/CalculatorSection.jsx
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import CalculatorForm from './CalculatorForm';
 import CalculationResults from './CalculationResults';
 
-function CalculatorSection({ selectedToken }) {
+function CalculatorSection({ selectedToken}) {
   const [calculationData, setCalculationData] = useState(null);
+  const [positionType, setPositionType] = useState('long');
+  const [selectedExchange, setSelectedExchange] = useState(null);
   const [formValues, setFormValues] = useState({
     entryPrice: '',
     leverage: '',
@@ -15,23 +16,46 @@ function CalculatorSection({ selectedToken }) {
     fundingRate: '',
   });
 
-  // Функція для розрахунку результатів
-  const calculateResults = (entryPrice, leverage, positionSize, openFee, closeFee, fundingRate) => {
+  const getBestExchange = (token) => {
+    if (!token) return { exchange: null, rate: 0 };
+
+    const rates = [
+      { exchange: 'Binance', rate: token.binanceFunding },
+      { exchange: 'OKX', rate: token.okexFunding },
+      { exchange: 'Bybit', rate: token.bybitFunding },
+      { exchange: 'Gate.io', rate: token.gateFunding },
+      { exchange: 'MEXC', rate: token.mexcFunding },
+    ].filter(item => item.rate !== undefined && item.rate !== null && item.rate !== '-');
+
+    if (rates.length === 0) return { exchange: null, rate: 0 };
+
+    const best = rates.reduce((prev, curr) => 
+      Math.abs(parseFloat(curr.rate)) > Math.abs(parseFloat(prev.rate)) ? curr : prev
+    );
+
+    return best;
+  };
+
+  const calculateResults = (entryPrice, leverage, positionSize, openFee, closeFee, fundingRate, positionType, exchange) => {
     const initialMargin = positionSize / leverage;
-    const recommendedMargin = initialMargin * 1.5; // Рекомендуємо 150% від мінімальної маржі
-    const liquidationPrice = entryPrice * (1 - (1 / leverage)); // Коректна формула для Long позиції
-    const liquidationMove = ((liquidationPrice / entryPrice) - 1) * 100;
+    const recommendedMargin = initialMargin * 1.5;
+    
+    const liquidationPrice = positionType === 'long'
+      ? entryPrice * (1 - (1 / leverage))
+      : entryPrice * (1 + (1 / leverage));
+    
+    const liquidationMove = Math.abs((liquidationPrice / entryPrice - 1) * 100);
     const totalFees = (openFee + closeFee) * positionSize;
     
-    // Розрахунок прибутку від фандингу
-    const estimatedFundingProfit = fundingRate * positionSize;
-    const estimatedDailyFundingProfit = estimatedFundingProfit * 3; // 3 рази на день
-    const estimatedMonthlyFundingProfit = estimatedDailyFundingProfit * 30; // 30 днів
-    const estimatedYearlyFundingProfit = estimatedDailyFundingProfit * 365; // 365 днів
-    
-    // Розрахунок APR (Annual Percentage Rate)
-    const fundingApr = fundingRate * 3 * 365 * 100; // 3 рази на день, 365 днів
-    
+    const effectiveFundingRate = positionType === 'long' && fundingRate < 0
+      ? Math.abs(fundingRate)
+      : positionType === 'short' && fundingRate > 0
+      ? Math.abs(fundingRate)
+      : fundingRate;
+
+    const estimatedFundingProfit = effectiveFundingRate * positionSize;
+    const estimatedDailyFundingProfit = estimatedFundingProfit * 3;
+
     setCalculationData({
       initialMargin,
       recommendedMargin,
@@ -40,53 +64,63 @@ function CalculatorSection({ selectedToken }) {
       totalFees,
       estimatedFundingProfit,
       estimatedDailyFundingProfit,
-      estimatedMonthlyFundingProfit,
-      estimatedYearlyFundingProfit,
-      fundingApr,
       selectedSymbol: selectedToken?.symbol || null,
+      selectedExchange: exchange,
+      positionType,
     });
-  };
-
-  // Допоміжна функція для розрахунку з конкретними значеннями
-  const handleCalculateWithValues = (values) => {
-    const entryPrice = parseFloat(values.entryPrice);
-    const leverage = parseFloat(values.leverage);
-    const positionSize = parseFloat(values.positionSize);
-    const openFee = parseFloat(values.openFee) / 100;
-    const closeFee = parseFloat(values.closeFee) / 100;
-    const fundingRate = parseFloat(values.fundingRate) / 100;
-    
-    calculateResults(entryPrice, leverage, positionSize, openFee, closeFee, fundingRate);
   };
 
   useEffect(() => {
     if (selectedToken) {
-      const newValues = {
-        ...formValues,
-        entryPrice: selectedToken.indexPrice || '',
-        fundingRate: selectedToken.fundingRate 
-          ? (selectedToken.fundingRate * 100).toFixed(4)
-          : '',
-      };
-      setFormValues(newValues);
-      
-      // Автоматично розраховуємо, якщо всі необхідні поля заповнені
-      if (
-        selectedToken.indexPrice && 
-        selectedToken.fundingRate && 
-        formValues.leverage && 
-        formValues.positionSize
-      ) {
-        // Симулюємо форму з оновленими значеннями
-        handleCalculateWithValues(newValues);
-      }
+      const bestExchange = getBestExchange(selectedToken);
+      const fundingRate = bestExchange.rate 
+        ? (parseFloat(bestExchange.rate) * 100).toFixed(4)
+        : selectedToken.fundingRate 
+        ? (selectedToken.fundingRate * 100).toFixed(4)
+        : '';
+
+      const newPositionType = parseFloat(fundingRate) < 0 ? 'long' : 'short';
+
+      setPositionType(newPositionType);
+      setSelectedExchange(bestExchange.exchange);
+
+      setFormValues(prevValues => {
+        console.log('Updating formValues from selectedToken:', { prevValues, fundingRate, entryPrice: selectedToken.indexPrice || '' });
+        return {
+          ...prevValues,
+          entryPrice: selectedToken.indexPrice || '',
+          fundingRate,
+        };
+      });
     }
-  }, [selectedToken, formValues.leverage, formValues.positionSize]);
+  }, [selectedToken]);
 
   const handleInputChange = (e) => {
     const { id, value } = e.target;
     setFormValues(prev => ({ ...prev, [id]: value }));
   };
+
+  const handleExchangeChange = (e) => {
+    const exchange = e.target.value;
+    setSelectedExchange(exchange);
+
+    const rate = exchange === 'Binance' ? selectedToken.binanceFunding :
+                exchange === 'OKX' ? selectedToken.okexFunding :
+                exchange === 'Bybit' ? selectedToken.bybitFunding :
+                exchange === 'Gate.io' ? selectedToken.gateFunding :
+                exchange === 'MEXC' ? selectedToken.mexcFunding : 0;
+
+    const fundingRate = rate ? (parseFloat(rate) * 100).toFixed(4) : '';
+    const newPositionType = parseFloat(fundingRate) < 0 ? 'long' : 'short';
+    setPositionType(newPositionType);
+
+    setFormValues(prev => ({
+      ...prev,
+      fundingRate,
+    }));
+  };
+
+  // Removed unused function handleRateClick
 
   const handleCalculate = (e) => {
     e.preventDefault();
@@ -98,18 +132,22 @@ function CalculatorSection({ selectedToken }) {
     const closeFee = parseFloat(formValues.closeFee) / 100;
     const fundingRate = parseFloat(formValues.fundingRate) / 100;
     
-    calculateResults(entryPrice, leverage, positionSize, openFee, closeFee, fundingRate);
+    calculateResults(entryPrice, leverage, positionSize, openFee, closeFee, fundingRate, positionType, selectedExchange);
   };
 
   return (
     <div className="card animate-fade">
       <div className="p-6 border-b border-[rgb(var(--border))]">
-        <h2 className="text-xl font-semibold">Калькулятор позиції</h2>
+        <h2 className="text-xl font-semibold">Простий калькулятор</h2>
       </div>
       
       <div className="p-6 space-y-6">
         <CalculatorForm 
           formValues={formValues}
+          positionType={positionType}
+          setPositionType={setPositionType}
+          selectedExchange={selectedExchange}
+          onExchangeChange={handleExchangeChange}
           onChange={handleInputChange}
           onSubmit={handleCalculate}
         />
@@ -129,7 +167,13 @@ CalculatorSection.propTypes = {
     symbol: PropTypes.string,
     indexPrice: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     fundingRate: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    binanceFunding: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    okexFunding: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    bybitFunding: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    gateFunding: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    mexcFunding: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   }),
+  onSelectRate: PropTypes.func.isRequired,
 };
 
 export default CalculatorSection;

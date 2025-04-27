@@ -35,7 +35,6 @@ function App() {
     };
 
     loadFundingData();
-    // Оновлюємо дані кожні 15 хвилин
     const intervalId = setInterval(loadFundingData, 15 * 60 * 1000);
     return () => clearInterval(intervalId);
   }, []);
@@ -44,7 +43,11 @@ function App() {
     setSelectedToken(token);
   };
 
-  // Форматування часу оновлення
+  const handleSelectRate = (token, exchange, rate) => {
+    console.log(`App: Selected token - ${token.symbol}, Exchange: ${exchange}, Rate: ${rate}`);
+    setSelectedToken(token);
+  };
+
   const formatUpdateTime = (date) => {
     if (!date) return '';
     
@@ -71,11 +74,15 @@ function App() {
               isLoading={isLoading} 
               error={error}
               onSelectToken={handleSelectToken}
+              onSelectRate={handleSelectRate}
             />
           </div>
           
           <div className="lg:w-1/4 lg:sticky lg:top-24 lg:self-start">
-            <CalculatorSection selectedToken={selectedToken} />
+            <CalculatorSection 
+              selectedToken={selectedToken} 
+              onSelectRate={handleSelectRate}
+            />
           </div>
         </div>
       </main>
