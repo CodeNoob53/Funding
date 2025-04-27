@@ -1,15 +1,6 @@
-// src/components/LazyLoadedCryptoIcon.jsx
+// src/components/CryptoIcon.jsx
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-
-// Цей компонент буде використовуватися для лінивого завантаження іконок криптовалют
-// Замість повного імпорту модуля iconModules, використовуємо функцію, яка буде реалізована пізніше
-// Поки що просто використовуємо базову функціональність для тестування
-async function loadIcon(symbol) {
-  // Спрощена версія для тестування, використовується symbol для логування
-  console.log('Loading icon for:', symbol);
-  return null; // Повертаємо null, щоб запустити fallback
-}
 
 function CryptoIcon({ symbol, size = 6, className = '' }) {
   const [iconSrc, setIconSrc] = useState(null);
@@ -24,11 +15,23 @@ function CryptoIcon({ symbol, size = 6, className = '' }) {
       
       try {
         setIsLoading(true);
-        const iconURL = await loadIcon(symbol);
         
-        if (isMounted) {
-          setIconSrc(iconURL);
-          setHasError(!iconURL);
+        // Використовуємо динамічний імпорт для завантаження іконок
+        try {
+          // Використовуємо нижній регістр для символу
+          const normalizedSymbol = symbol.toLowerCase();
+          // Динамічний імпорт SVG-файлу
+          const iconModule = await import(`../assets/cryptoIcons/icons/${normalizedSymbol}.svg`);
+          
+          if (isMounted) {
+            setIconSrc(iconModule.default);
+            setHasError(false);
+          }
+        } catch {
+          if (isMounted) {
+            // Якщо іконка не знайдена, встановлюємо помилку
+            setHasError(true);
+          }
         }
       } catch (error) {
         if (isMounted) {
