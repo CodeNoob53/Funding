@@ -1,0 +1,94 @@
+/* Ensure this file is processed by Tailwind CSS (e.g., via PostCSS or your build tool) */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 226 232 240;
+    --foreground: 15 23 42;
+    --card: 255 255 255;
+    --card-foreground: 15 23 42;
+    --border: 226 232 240;
+    --primary: 37 99 235;
+    --primary-foreground: 255 255 255;
+  }
+
+  :root[data-theme="dark"] {
+    --background: 15 23 42;
+    --foreground: 226 232 240;
+    --card: 30 41 59;
+    --card-foreground: 226 232 240;
+    --border: 51 65 85;
+    --primary: 59 130 246;
+    --primary-foreground: 255 255 255;
+  }
+
+  body {
+    @apply bg-[rgb(var(--background))] text-[rgb(var(--foreground))] transition-colors duration-200;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 
+           focus:outline-none focus:ring-2 focus:ring-opacity-50;
+  }
+  
+  .btn-primary {
+    @apply btn bg-[rgb(var(--primary))] text-[rgb(var(--primary-foreground))]
+           hover:bg-[rgb(var(--primary))/90] focus:ring-[rgb(var(--primary))/50];
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent hover:bg-[rgb(var(--foreground))/10] 
+           text-[rgb(var(--foreground))] border border-[rgb(var(--border))];
+  }
+  
+  .input-field {
+    @apply w-full px-3 py-2 bg-[rgb(var(--card))] 
+           border border-[rgb(var(--border))] rounded-md
+           text-[rgb(var(--card-foreground))]
+           focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary))/50]
+           focus:border-[rgb(var(--primary))]
+           transition-all duration-200;
+  }
+  
+  .card {
+    @apply bg-[rgb(var(--card))] rounded-xl shadow-lg 
+           border border-[rgb(var(--border))]
+           text-[rgb(var(--card-foreground))]
+           transition-all duration-300;
+  }
+}
+
+.table-header {
+  @apply text-[rgb(var(--foreground))/60] text-sm font-medium;
+}
+
+.table-cell {
+  @apply py-3 px-4;
+}
+
+.table-row-hover {
+  @apply hover:bg-[rgb(var(--foreground))/5] cursor-pointer transition-colors;
+}
+
+.animate-fade {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.animate-slide {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
