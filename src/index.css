@@ -64,15 +64,21 @@
 }
 
 .table-header {
-  @apply text-[rgb(var(--foreground))/60] text-sm font-medium;
+  @apply text-[rgb(var(--foreground))/80] text-sm font-semibold uppercase tracking-wide;
 }
 
 .table-cell {
-  @apply py-3 px-4;
+  @apply py-4 px-4 sm:px-6;
 }
 
 .table-row-hover {
-  @apply hover:bg-[rgb(var(--foreground))/5] cursor-pointer transition-colors;
+  @apply transition-all duration-200 hover:shadow-md hover:bg-[rgb(var(--foreground))/5] cursor-pointer;
+}
+
+.crypto-icon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0; /* Забезпечуємо, що іконка не стискається */
 }
 
 .animate-fade {

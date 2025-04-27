@@ -12,8 +12,8 @@ function TokenItem({ token, onClick, onRateClick }) {
     return (
       <span
         onClick={(e) => {
-          e.stopPropagation(); // Зупиняємо bubbling, щоб клік на рядок не спрацьовував
-          console.log(`Clicked on ${exchange} rate: ${rate}`); // Дебаг-логування
+          e.stopPropagation();
+          console.log(`Clicked on ${exchange} rate: ${rate}`);
           onRateClick(token, exchange, rate);
         }}
         className={`
@@ -37,23 +37,28 @@ function TokenItem({ token, onClick, onRateClick }) {
   const apr = calculateApr(token.fundingRate);
 
   return (
-    <tr className="table-row-hover" onClick={() => onClick(token)}>
-      <td className="table-cell font-medium flex items-center gap-2">
-        <CryptoIcon symbol={token.symbol} size={6} />
-        <div>
-          <div>{token.symbol}</div>
-          {apr && (
-            <div className="text-xs opacity-60">
-              APR: {apr}%
-            </div>
-          )}
+    <tr 
+      className="table-row-hover transition-all duration-200 hover:shadow-md hover:bg-[rgb(var(--foreground))/5]"
+      onClick={() => onClick(token)}
+    >
+      <td className="table-cell font-medium py-4 px-4 sm:px-6">
+        <div className="flex items-center gap-3">
+          <CryptoIcon symbol={token.symbol} size={6} />
+          <div className="flex flex-col">
+            <div className="text-sm sm:text-base font-medium">{token.symbol}</div>
+            {apr && (
+              <div className="text-xs opacity-60">
+                APR: {apr}%
+              </div>
+            )}
+          </div>
         </div>
       </td>
-      <td className="table-cell text-right">{formatRate(token.binanceFunding, 'Binance')}</td>
-      <td className="table-cell text-right">{formatRate(token.okexFunding, 'OKX')}</td>
-      <td className="table-cell text-right">{formatRate(token.bybitFunding, 'Bybit')}</td>
-      <td className="table-cell text-right">{formatRate(token.gateFunding, 'Gate.io')}</td>
-      <td className="table-cell text-right">{formatRate(token.mexcFunding, 'MEXC')}</td>
+      <td className="table-cell text-right py-4 px-4 sm:px-6">{formatRate(token.binanceFunding, 'Binance')}</td>
+      <td className="table-cell text-right py-4 px-4 sm:px-6">{formatRate(token.okexFunding, 'OKX')}</td>
+      <td className="table-cell text-right py-4 px-4 sm:px-6">{formatRate(token.bybitFunding, 'Bybit')}</td>
+      <td className="table-cell text-right py-4 px-4 sm:px-6">{formatRate(token.gateFunding, 'Gate.io')}</td>
+      <td className="table-cell text-right py-4 px-4 sm:px-6">{formatRate(token.mexcFunding, 'MEXC')}</td>
     </tr>
   );
 }
