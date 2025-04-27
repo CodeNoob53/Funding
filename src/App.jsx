@@ -46,20 +46,20 @@ function App() {
 
   const handleSelectRate = (token, exchange, rate) => {
     console.log(`App: Selected token - ${token.symbol}, Exchange: ${exchange}, Rate: ${rate}`);
-    
+
     // Оновлюємо вибраний токен із додатковими параметрами
     const updatedToken = {
       ...token,
       selectedExchange: exchange,
       selectedRate: rate
     };
-    
+
     setSelectedToken(updatedToken);
   };
 
   const formatUpdateTime = (date) => {
     if (!date) return '';
-    
+
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
     return `${hours}:${minutes}`;
@@ -68,34 +68,34 @@ function App() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      
+
       <main className="flex-1 container mx-auto px-4 py-8">
         {lastUpdated && (
           <div className="mb-4 text-sm text-[rgb(var(--foreground))/60 flex justify-end">
             Останнє оновлення: {formatUpdateTime(lastUpdated)}
           </div>
         )}
-        
+
         <div className="flex flex-col lg:flex-row gap-6">
-          <div className="lg:w-3/4">
-            <FundingSection 
-              fundingData={fundingData} 
-              isLoading={isLoading} 
+          <div className="lg:w-3/5">
+            <FundingSection
+              fundingData={fundingData}
+              isLoading={isLoading}
               error={error}
               onSelectToken={handleSelectToken}
               onSelectRate={handleSelectRate}
             />
           </div>
-          
-          <div className="lg:w-1/4 lg:sticky lg:top-24 lg:self-start">
-            <CalculatorSection 
-              selectedToken={selectedToken} 
+
+          <div className="lg:w-2/5 lg:self-start lg:top-24 lg:self-start">
+            <CalculatorSection
+              selectedToken={selectedToken}
               onSelectRate={handleSelectRate}
             />
           </div>
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );

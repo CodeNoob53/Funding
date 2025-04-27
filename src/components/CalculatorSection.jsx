@@ -137,7 +137,7 @@ function CalculatorSection({ selectedToken }) {
   };
 
   return (
-    <div className="card animate-fade">
+    <div className="card animate-fade min-w-[340px]">
       <div className="p-6 border-b border-[rgb(var(--border))]">
         <h2 className="text-xl font-semibold">Простий калькулятор</h2>
       </div>

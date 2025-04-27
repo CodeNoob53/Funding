@@ -3,12 +3,26 @@ import PropTypes from 'prop-types';
 import * as simpleIcons from 'simple-icons/icons';
 
 function ExchangeIcon({ exchange, size = 32, color = 'currentColor' }) {
-  const normalizedExchange = exchange.toLowerCase().replace(/\s+/g, '');
-
-  // Спроба знайти іконку
-  const icon = Object.values(simpleIcons).find((icon) => 
-    icon.slug === normalizedExchange || icon.title.toLowerCase() === exchange.toLowerCase()
-  );
+  // Маппінг назв бірж до їх назв у simple-icons
+  const exchangeMappings = {
+    'Binance': 'Binance',
+    'OKX': 'OKX',
+    'Bybit': 'Bybit',
+    'Gate.io': 'Gateio', // У simple-icons немає крапки
+    'MEXC': 'MEXC',
+  };
+  
+  // Отримуємо назву іконки з маппінгу або використовуємо оригінальну назву
+  const iconName = exchangeMappings[exchange] || exchange;
+  const normalizedName = iconName.toLowerCase().replace(/\s+/g, '');
+  
+  // Шукаємо іконку за різними шляхами
+  const icon = 
+    simpleIcons[`si${iconName.charAt(0).toUpperCase() + normalizedName.slice(1).toLowerCase()}`] ||
+    Object.values(simpleIcons).find(icon => 
+      icon.slug === normalizedName || 
+      icon.title.toLowerCase().replace(/\s+/g, '') === normalizedName
+    );
 
   if (!icon) {
     // Якщо біржа не знайдена — рендеримо заглушку
@@ -20,14 +34,16 @@ function ExchangeIcon({ exchange, size = 32, color = 'currentColor' }) {
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#ccc',
+          background: 'rgb(var(--foreground))',
+          opacity: 0.2,
           borderRadius: '50%',
           fontSize: size * 0.4,
-          color: '#fff'
+          color: 'rgb(var(--background))',
+          fontWeight: 'bold'
         }}
         title={exchange}
       >
-        ?
+        {exchange.slice(0, 1)}
       </div>
     );
   }
@@ -51,7 +67,7 @@ function ExchangeIcon({ exchange, size = 32, color = 'currentColor' }) {
         fill={color}
         xmlns="http://www.w3.org/2000/svg"
       >
-        <title>{icon.title}</title>
+        <title>{exchange}</title>
         <path d={icon.path} />
       </svg>
     </div>
