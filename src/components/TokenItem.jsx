@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import CryptoIcon from './CryptoIcon';
 
 function TokenItem({ token, exchanges, onClick, onRateClick }) {
+  // Функція для форматування та відображення ставки фандингу
   const formatRate = (rate, exchange) => {
     if (rate === undefined || rate === null || rate === '-') return '-';
     
@@ -28,19 +29,40 @@ function TokenItem({ token, exchanges, onClick, onRateClick }) {
     );
   };
 
+  // Функція для обчислення річної прибутковості (APR) на основі ставки фандингу
   const calculateApr = (rate) => {
     if (rate === undefined || rate === null || rate === '-') return null;
-    const annualizedRate = parseFloat(rate) * 3 * 365;
+    const annualizedRate = parseFloat(rate) * 3 * 365; // 3 рази на день, 365 днів
     return (annualizedRate * 100).toFixed(2);
   };
 
   const apr = calculateApr(token.fundingRate);
 
+  // Функція для отримання наступного часу фандингу (якщо є)
+  const getNextFundingTime = (exchangeName) => {
+    const nextFundingKey = `${exchangeName}NextFundingTime`;
+    return token[nextFundingKey];
+  };
+
   // Функція для отримання значення фандингу для конкретної біржі
   const getExchangeFunding = (exchangeName) => {
-    // Перетворюємо назву біржі на низький регістр і додаємо суфікс, якщо потрібно
-    const key = exchangeName.toLowerCase();
-    return token[key];
+    // Використовуємо ключ біржі безпосередньо, оскільки він вже у нижньому регістрі
+    return token[exchangeName];
+  };
+
+  // Функція для форматування часу
+  const formatTime = (timestamp) => {
+    if (!timestamp) return null;
+    
+    try {
+      const date = new Date(parseInt(timestamp));
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      return `${hours}:${minutes}`;
+    } catch (e) {
+      console.error('Error formatting time:', e);
+      return null;
+    }
   };
 
   return (
@@ -63,11 +85,25 @@ function TokenItem({ token, exchanges, onClick, onRateClick }) {
       </td>
       
       {/* Динамічно відображаємо стовпці для всіх бірж */}
-      {exchanges.map(exchange => (
-        <td key={exchange} className="table-cell text-right py-4 px-4 sm:px-6">
-          {formatRate(getExchangeFunding(exchange), exchange)}
-        </td>
-      ))}
+      {exchanges.map(exchange => {
+        const fundingRate = getExchangeFunding(exchange);
+        const nextFundingTime = getNextFundingTime(exchange);
+        const formattedTime = formatTime(nextFundingTime);
+        
+        return (
+          <td key={exchange} className="table-cell text-right py-4 px-4 sm:px-6">
+            <div className="flex flex-col items-end gap-1">
+              {formatRate(fundingRate, exchange)}
+              
+              {formattedTime && (
+                <div className="text-xs opacity-50">
+                  {formattedTime}
+                </div>
+              )}
+            </div>
+          </td>
+        );
+      })}
     </tr>
   );
 }

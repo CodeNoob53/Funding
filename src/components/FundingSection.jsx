@@ -2,100 +2,51 @@ import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import TokenItem from './TokenItem';
 import ExchangeIcon from './ExchangeIcon';
-import { FiSliders, FiSearch, FiAlertCircle } from 'react-icons/fi';
+import { FiSliders, FiSearch, FiRefreshCw } from 'react-icons/fi';
 
 function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelectRate }) {
   const [filterThreshold, setFilterThreshold] = useState(0.15);
   const [showFilter, setShowFilter] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [availableExchanges, setAvailableExchanges] = useState([]);
-  const [processingError, setProcessingError] = useState(null);
 
-  // Визначаємо доступні біржі на основі отриманих даних
+  // Функція для визначення доступних бірж на основі отриманих даних
   useEffect(() => {
     if (fundingData && fundingData.length > 0) {
-      try {
-        console.log('Аналіз бірж з отриманих даних...');
-        // Отримуємо всі ключі першого елемента даних, щоб знайти назви бірж
-        const firstItem = fundingData[0];
+      // Отримуємо перший токен для аналізу ключів
+      const firstItem = fundingData[0];
+      
+      // Збираємо всі ключі, які є біржами (не містять суфікси та службові поля)
+      const exchangeKeys = Object.keys(firstItem).filter(key => 
+        key !== 'symbol' && 
+        key !== 'indexPrice' && 
+        key !== 'fundingRate' &&
+        !key.includes('NextFundingTime') && // Виключаємо поля часу наступного фандингу
+        !key.includes('Coin') && // Виключаємо потенційні маркери coin-margined
+        !key.endsWith('Funding') // Виключаємо старі ключі, якщо вони залишились
+      );
+      
+      // Перетворюємо ключі в об'єкти з відображуваними назвами
+      setAvailableExchanges(exchangeKeys.map(key => {
+        // Нормалізуємо назви бірж для відображення (перша літера велика)
+        const displayName = key.charAt(0).toUpperCase() + key.slice(1);
         
-        // Перевіряємо, що об'єкт є валідним
-        if (!firstItem || typeof firstItem !== 'object') {
-          console.warn('Неправильний формат даних фандингу:', firstItem);
-          setProcessingError('Неправильний формат даних');
-          return;
-        }
-        
-        const exchangeKeys = Object.keys(firstItem).filter(key => 
-          // Шукаємо всі ключі, які є фандинг-ставками (але не fundingRate, який є середнім значенням)
-          key !== 'symbol' && 
-          key !== 'indexPrice' && 
-          key !== 'fundingRate' && 
-          // Фільтруємо ключі, які містять "Funding" для сумісності зі старим форматом
-          !key.includes('Funding')
-        );
-        
-        console.log('Знайдені ключі бірж:', exchangeKeys);
-        
-        if (exchangeKeys.length === 0) {
-          console.warn('Не знайдено жодної біржі у даних');
-          setProcessingError('Не знайдено даних про біржі');
-          return;
-        }
-        
-        setAvailableExchanges(exchangeKeys.map(key => {
-          // Нормалізуємо назви бірж для відображення
-          const exchangeName = key
-            .replace(/([A-Z])/g, ' $1') // Додаємо пробіл перед великою літерою
-            .replace(/^./, str => str.toUpperCase()) // Робимо першу літеру великою
-            .trim();
-          
-          return { key, displayName: exchangeName };
-        }));
-        
-        setProcessingError(null);
-      } catch (err) {
-        console.error('Помилка аналізу бірж:', err);
-        setProcessingError('Помилка обробки даних');
-      }
+        return { key, displayName };
+      }));
     }
   }, [fundingData]);
 
-  // Фільтруємо та сортуємо токени
-  const getFilteredTokens = () => {
-    try {
-      if (!fundingData || !Array.isArray(fundingData) || fundingData.length === 0) {
-        return [];
+  // Фільтруємо токени за пошуком та значенням фандингу
+  const filteredTokens = fundingData
+    .filter(token => {
+      if (!token.fundingRate) return false;
+      if (searchQuery && !token.symbol.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return false;
       }
-      
-      return fundingData
-        .filter(token => {
-          if (!token || !token.symbol || token.fundingRate === undefined) return false;
-          if (searchQuery && !token.symbol.toLowerCase().includes(searchQuery.toLowerCase())) {
-            return false;
-          }
-          
-          // Безпечне перетворення ставки фандингу в число
-          const fundingRateValue = parseFloat(token.fundingRate);
-          if (isNaN(fundingRateValue)) return false;
-          
-          const absRate = Math.abs(fundingRateValue * 100);
-          return absRate >= filterThreshold;
-        })
-        .sort((a, b) => {
-          // Безпечне порівняння
-          const aRate = parseFloat(a.fundingRate) || 0;
-          const bRate = parseFloat(b.fundingRate) || 0;
-          return Math.abs(bRate) - Math.abs(aRate);
-        });
-    } catch (err) {
-      console.error('Помилка фільтрації токенів:', err);
-      setProcessingError('Помилка фільтрації даних');
-      return [];
-    }
-  };
-  
-  const filteredTokens = getFilteredTokens();
+      const absRate = Math.abs(token.fundingRate * 100);
+      return absRate >= filterThreshold;
+    })
+    .sort((a, b) => Math.abs(b.fundingRate) - Math.abs(a.fundingRate));
 
   const handleThresholdChange = (e) => {
     setFilterThreshold(parseFloat(e.target.value));
@@ -106,15 +57,29 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
   };
 
   const handleRateClick = (token, exchange, rate) => {
-    console.log(`FundingSection: Selecting rate for ${token.symbol} on ${exchange}: ${rate}`);
-    onSelectRate(token, exchange, rate);
+    const exchangeDisplayName = availableExchanges.find(ex => ex.key === exchange)?.displayName || exchange;
+    console.log(`FundingSection: Selecting rate for ${token.symbol} on ${exchangeDisplayName}: ${rate}`);
+    onSelectRate(token, exchangeDisplayName, rate);
   };
 
   // Отримуємо список ключів бірж для передачі в TokenItem
   const exchangeKeys = availableExchanges.map(exchange => exchange.key);
+  
+  // Функція для форматування часу наступного фандингу
+  const formatNextFundingTime = (timestamp) => {
+    if (!timestamp) return 'Невідомо';
+    
+    const date = new Date(timestamp);
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    
+    return `${hours}:${minutes}`;
+  };
 
-  // Відображаємо помилку обробки даних, якщо вона є
-  const showError = error || processingError;
+  // Значення наступного фандингу для першого токена і першої біржі (для відображення)
+  const nextFundingExample = fundingData.length > 0 && availableExchanges.length > 0 
+    ? fundingData[0][`${availableExchanges[0].key}NextFundingTime`] 
+    : null;
 
   return (
     <section className="card overflow-hidden animate-fade">
@@ -136,7 +101,6 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
                 value={searchQuery}
                 onChange={handleSearchChange}
                 className="w-full py-1.5 px-3 pr-8 text-sm rounded-md border border-[rgb(var(--border))] bg-[rgb(var(--card))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary))/50]"
-                disabled={showError || isLoading}
               />
               <FiSearch className="absolute right-2.5 top-1/2 transform -translate-y-1/2 text-[rgb(var(--foreground))/50]" />
             </div>
@@ -145,7 +109,6 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
               onClick={() => setShowFilter(!showFilter)}
               className="p-2 rounded-md border border-[rgb(var(--border))] hover:bg-[rgb(var(--foreground))/5] transition-colors"
               aria-label="Налаштування фільтрів"
-              disabled={showError || isLoading}
             >
               <FiSliders size={18} />
             </button>
@@ -153,7 +116,7 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
         </div>
         
         {/* Фільтр із анімацією */}
-        {showFilter && !showError && (
+        {showFilter && (
           <div className="mt-3 p-3 border border-[rgb(var(--border))] rounded-lg bg-[rgb(var(--card))] animate-slide">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex-1">
@@ -182,27 +145,24 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
                 />
               </div>
             </div>
+            
+            {/* Інформація про наступний фандинг */}
+            {nextFundingExample && (
+              <div className="mt-2 text-xs text-[rgb(var(--foreground))/60] flex items-center gap-1">
+                <FiRefreshCw size={12} />
+                <span>Наступний фандинг: {formatNextFundingTime(nextFundingExample)}</span>
+              </div>
+            )}
           </div>
         )}
       </div>
       
-      {/* Повідомлення про помилку */}
-      {showError ? (
+      {/* Таблиця */}
+      {error ? (
         <div className="p-6">
-          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 flex items-center gap-3">
-            <FiAlertCircle size={24} />
-            <div>
-              <p className="font-medium">{showError}</p>
-              <p className="text-sm mt-1 text-red-500/80">
-                Перевірте з&apos;єднання з інтернетом та наявність API-ключа
-              </p>
-            </div>
+          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500">
+            <p>{error}</p>
           </div>
-        </div>
-      ) : isLoading ? (
-        <div className="py-16 px-6 flex flex-col items-center justify-center text-center">
-          <div className="w-10 h-10 border-4 border-[rgb(var(--primary))/30] border-t-[rgb(var(--primary))] rounded-full animate-spin mb-4"></div>
-          <p className="text-[rgb(var(--foreground))/70]">Завантаження даних про фандинг...</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -235,7 +195,7 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
                   onRateClick={handleRateClick}
                 />
               ))}
-              {!isLoading && filteredTokens.length === 0 && !showError && (
+              {!isLoading && filteredTokens.length === 0 && (
                 <tr>
                   <td colSpan={availableExchanges.length + 1} className="table-cell text-center py-8 opacity-70">
                     {searchQuery ? 
@@ -251,9 +211,7 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
       
       {/* Нижній рядок */}
       <div className="p-3 border-t border-[rgb(var(--border))] bg-[rgb(var(--card))] text-xs text-center text-[rgb(var(--foreground))/60">
-        {!showError && (
-          <>Показано {filteredTokens.length} з {fundingData.length} монет • Фільтр: фандинг ≥ {filterThreshold}%</>
-        )}
+        Показано {filteredTokens.length} з {fundingData.length} монет • Фільтр: фандинг ≥ {filterThreshold}%
       </div>
     </section>
   );
@@ -262,21 +220,15 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
 FundingSection.propTypes = {
   fundingData: PropTypes.arrayOf(
     PropTypes.shape({
-      symbol: PropTypes.string,
+      symbol: PropTypes.string.isRequired,
       fundingRate: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
       // Динамічні властивості для різних бірж не вказуємо в PropTypes
     })
-  ),
+  ).isRequired,
   isLoading: PropTypes.bool.isRequired,
   error: PropTypes.oneOfType([PropTypes.string, PropTypes.node]),
   onSelectToken: PropTypes.func.isRequired,
   onSelectRate: PropTypes.func.isRequired,
-};
-
-// Встановлюємо значення за замовчуванням
-FundingSection.defaultProps = {
-  fundingData: [],
-  error: null
 };
 
 export default FundingSection;
