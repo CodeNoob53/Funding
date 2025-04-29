@@ -1,25 +1,49 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || "https://open-api.coinglass.com/public/v2/funding";
+// Базовий URL API v4
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://open-api-v4.coinglass.com";
 const API_KEY = import.meta.env.VITE_API_KEY || "";
 
+// Ендпоінти API
+const ENDPOINTS = {
+  // Поточні ставки фандингу по біржах
+  FUNDING_RATES: "/api/futures/fundingRate/exchange-list",
+  
+  // Кумулятивні ставки фандингу за період
+  CUMULATIVE_FUNDING: "/api/futures/fundingRate/cumulative-exchange-list",
+  
+  // Ринкові дані для ф'ючерсних монет (ціна, ліквідність, об'єм торгів)
+  COINS_MARKETS: "/api/futures/coins-markets",
+  
+  // Підтримувані біржі та торгові пари
+  SUPPORTED_EXCHANGES_PAIRS: "/api/futures/supported-exchange-and-pairs",
+  
+  // Поточні ордери для аналізу глибини ринку
+  ORDER_BOOK: "/api/futures/orderbook/bid-ask"
+};
+
+// Функція для створення конфігурації запитів
+const createRequestConfig = () => {
+  return {
+    headers: {
+      'accept': 'application/json',
+      'CG-API-KEY': API_KEY
+    }
+  };
+};
+
+/**
+ * Отримання поточних ставок фандингу по всіх біржах
+ */
 export const fetchFundingRates = async () => {
   try {
-    // Якщо API-ключ не надано, використовуємо тестові дані для розробки
     if (!API_KEY) {
-      console.warn('API-ключ не надано, використовуємо тестові дані');
-      return getMockFundingData();
+      throw new Error('API-ключ не надано');
     }
     
-    const response = await axios.get(API_URL, {
-      headers: {
-        'accept': 'application/json',
-        'coinglassSecret': API_KEY
-      }
-    });
+    const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.FUNDING_RATES}`, createRequestConfig());
 
     if (response.data && response.data.success && response.data.data) {
-      // Форматуємо дані для використання в додатку
       return formatFundingData(response.data.data);
     }
     
@@ -30,140 +54,152 @@ export const fetchFundingRates = async () => {
   }
 };
 
+/**
+ * Отримання кумулятивних ставок фандингу за період
+ * @param {string} symbol - Символ криптовалюти (наприклад, "BTC")
+ * @param {number} days - Кількість днів для аналізу (за замовчуванням 7)
+ */
+export const fetchCumulativeFunding = async (symbol, days = 7) => {
+  try {
+    if (!API_KEY) {
+      throw new Error('API-ключ не надано');
+    }
+    
+    const url = `${API_BASE_URL}${ENDPOINTS.CUMULATIVE_FUNDING}?symbol=${symbol}&days=${days}`;
+    const response = await axios.get(url, createRequestConfig());
+    
+    if (response.data && response.data.success && response.data.data) {
+      return response.data.data;
+    }
+    
+    throw new Error('Неправильний формат відповіді API для кумулятивного фандингу');
+  } catch (error) {
+    console.error(`Помилка отримання кумулятивного фандингу для ${symbol}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Отримання ринкових даних для монет (ціна, ліквідність, об'єм)
+ * @param {string} symbol - Символ криптовалюти (опціонально)
+ */
+export const fetchCoinsMarkets = async (symbol = '') => {
+  try {
+    if (!API_KEY) {
+      throw new Error('API-ключ не надано');
+    }
+    
+    const url = `${API_BASE_URL}${ENDPOINTS.COINS_MARKETS}${symbol ? `?symbol=${symbol}` : ''}`;
+    const response = await axios.get(url, createRequestConfig());
+    
+    if (response.data && response.data.success && response.data.data) {
+      return response.data.data;
+    }
+    
+    throw new Error('Неправильний формат відповіді API для ринкових даних');
+  } catch (error) {
+    console.error('Помилка отримання ринкових даних:', error);
+    throw error;
+  }
+};
+
+/**
+ * Отримання підтримуваних бірж і торгових пар
+ * @param {string} symbol - Символ криптовалюти (опціонально)
+ */
+export const fetchSupportedExchangesAndPairs = async (symbol = '') => {
+  try {
+    if (!API_KEY) {
+      throw new Error('API-ключ не надано');
+    }
+    
+    const url = `${API_BASE_URL}${ENDPOINTS.SUPPORTED_EXCHANGES_PAIRS}${symbol ? `?symbol=${symbol}` : ''}`;
+    const response = await axios.get(url, createRequestConfig());
+    
+    if (response.data && response.data.success && response.data.data) {
+      return response.data.data;
+    }
+    
+    throw new Error('Неправильний формат відповіді API для підтримуваних бірж і пар');
+  } catch (error) {
+    console.error('Помилка отримання підтримуваних бірж і пар:', error);
+    throw error;
+  }
+};
+
+/**
+ * Отримання книги ордерів для аналізу глибини ринку
+ * @param {string} symbol - Символ криптовалюти
+ * @param {string} exchange - Назва біржі (наприклад, "binance")
+ */
+export const fetchOrderBook = async (symbol, exchange) => {
+  try {
+    if (!API_KEY) {
+      throw new Error('API-ключ не надано');
+    }
+    
+    const url = `${API_BASE_URL}${ENDPOINTS.ORDER_BOOK}?symbol=${symbol}&exchange=${exchange}`;
+    const response = await axios.get(url, createRequestConfig());
+    
+    if (response.data && response.data.success && response.data.data) {
+      return response.data.data;
+    }
+    
+    throw new Error('Неправильний формат відповіді API для книги ордерів');
+  } catch (error) {
+    console.error(`Помилка отримання книги ордерів для ${symbol} на біржі ${exchange}:`, error);
+    throw error;
+  }
+};
+
 // Форматування даних з API для використання в додатку
 const formatFundingData = (data) => {
   // Конвертуємо об'єкт у масив для легшої фільтрації
-  return Object.values(data).map(item => ({
-    symbol: item.symbol,
-    indexPrice: item.usdPrice || item.indexPrice,
-    binanceFunding: item.binanceFundingRate,
-    okexFunding: item.okexFundingRate,
-    bybitFunding: item.bybitFundingRate,
-    gateFunding: item.gateFundingRate,
-    mexcFunding: item.mexcFundingRate,
-    // Обчислюємо середній фандинг для сортування і фільтрації
-    fundingRate: calculateAverageFunding(item)
-  }));
+  return Object.values(data).map(item => {
+    const formattedItem = {
+      symbol: item.symbol,
+      indexPrice: item.usdPrice || item.indexPrice
+    };
+    
+    // Додаємо всі наявні фандинг-ставки з API
+    const exchangeRates = {};
+    
+    // Додаємо всі доступні біржі та їх ставки
+    Object.keys(item).forEach(key => {
+      if (key.includes('FundingRate') && key !== 'nextFundingRate') {
+        // Парсимо назву біржі з ключа (наприклад, binanceFundingRate -> binance)
+        const exchangeName = key.replace('FundingRate', '');
+        exchangeRates[exchangeName] = item[key];
+      }
+    });
+    
+    // Об'єднуємо дані
+    const result = {
+      ...formattedItem,
+      ...exchangeRates,
+      // Обчислюємо середній фандинг для сортування і фільтрації
+      fundingRate: calculateAverageFunding(item)
+    };
+    
+    return result;
+  });
 };
 
 // Обчислюємо середній фандинг для криптовалюти
 const calculateAverageFunding = (item) => {
-  const rates = [
-    item.binanceFundingRate,
-    item.okexFundingRate,
-    item.bybitFundingRate,
-    item.gateFundingRate,
-    item.mexcFundingRate
-  ].filter(rate => rate !== undefined && rate !== null && rate !== '-');
+  // Збираємо всі доступні ставки фандингу з різних бірж
+  const rates = [];
+  Object.keys(item).forEach(key => {
+    if (key.includes('FundingRate') && key !== 'nextFundingRate') {
+      const rate = item[key];
+      if (rate !== undefined && rate !== null && rate !== '-') {
+        rates.push(parseFloat(rate));
+      }
+    }
+  });
   
   if (rates.length === 0) return 0;
   
-  const sum = rates.reduce((acc, rate) => acc + parseFloat(rate), 0);
+  const sum = rates.reduce((acc, rate) => acc + rate, 0);
   return sum / rates.length;
-};
-
-// Тестові дані для розробки, коли API-ключ не доступний
-const getMockFundingData = () => {
-  return [
-    {
-      symbol: 'BTC',
-      indexPrice: 75000,
-      fundingRate: 0.0020,
-      binanceFunding: 0.0022,
-      okexFunding: 0.0018,
-      bybitFunding: 0.0021,
-      gateFunding: 0.0019,
-      mexcFunding: 0.0020
-    },
-    {
-      symbol: 'ETH',
-      indexPrice: 3500,
-      fundingRate: 0.0018,
-      binanceFunding: 0.0019,
-      okexFunding: 0.0017,
-      bybitFunding: 0.0018,
-      gateFunding: 0.0016,
-      mexcFunding: 0.0020
-    },
-    {
-      symbol: 'SOL',
-      indexPrice: 140,
-      fundingRate: 0.0025,
-      binanceFunding: 0.0027,
-      okexFunding: 0.0023,
-      bybitFunding: 0.0024,
-      gateFunding: 0.0026,
-      mexcFunding: 0.0025
-    },
-    {
-      symbol: 'DOGE',
-      indexPrice: 0.12,
-      fundingRate: 0.0030,
-      binanceFunding: 0.0035,
-      okexFunding: 0.0028,
-      bybitFunding: 0.0032,
-      gateFunding: 0.0029,
-      mexcFunding: 0.0026
-    },
-    {
-      symbol: 'XRP',
-      indexPrice: 0.58,
-      fundingRate: -0.0016,
-      binanceFunding: -0.0018,
-      okexFunding: -0.0015,
-      bybitFunding: -0.0017,
-      gateFunding: -0.0016,
-      mexcFunding: -0.0014
-    },
-    {
-      symbol: 'ADA',
-      indexPrice: 0.45,
-      fundingRate: -0.0019,
-      binanceFunding: -0.0021,
-      okexFunding: -0.0018,
-      bybitFunding: -0.0019,
-      gateFunding: -0.0020,
-      mexcFunding: -0.0017
-    },
-    {
-      symbol: 'AVAX',
-      indexPrice: 36.8,
-      fundingRate: 0.0022,
-      binanceFunding: 0.0025,
-      okexFunding: 0.0020,
-      bybitFunding: 0.0023,
-      gateFunding: 0.0021,
-      mexcFunding: 0.0021
-    },
-    {
-      symbol: 'MATIC',
-      indexPrice: 0.95,
-      fundingRate: -0.0017,
-      binanceFunding: -0.0018,
-      okexFunding: -0.0016,
-      bybitFunding: -0.0019,
-      gateFunding: -0.0015,
-      mexcFunding: -0.0017
-    },
-    {
-      symbol: 'PEPE',
-      indexPrice: 0.00018,
-      fundingRate: 0.0170,
-      binanceFunding: 0.0180,
-      okexFunding: 0.0160,
-      bybitFunding: 0.0175,
-      gateFunding: 0.0165,
-      mexcFunding: 0.0170
-    },
-    {
-      symbol: 'APT',
-      indexPrice: 8.65,
-      fundingRate: -0.0160,
-      binanceFunding: -0.0170,
-      okexFunding: -0.0155,
-      bybitFunding: -0.0165,
-      gateFunding: -0.0150,
-      mexcFunding: -0.0160
-    },
-  ];
 };

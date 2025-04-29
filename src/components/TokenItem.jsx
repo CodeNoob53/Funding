@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import CryptoIcon from './CryptoIcon';
 
-function TokenItem({ token, onClick, onRateClick }) {
+function TokenItem({ token, exchanges, onClick, onRateClick }) {
   const formatRate = (rate, exchange) => {
     if (rate === undefined || rate === null || rate === '-') return '-';
     
@@ -36,6 +36,13 @@ function TokenItem({ token, onClick, onRateClick }) {
 
   const apr = calculateApr(token.fundingRate);
 
+  // Функція для отримання значення фандингу для конкретної біржі
+  const getExchangeFunding = (exchangeName) => {
+    // Перетворюємо назву біржі на низький регістр і додаємо суфікс, якщо потрібно
+    const key = exchangeName.toLowerCase();
+    return token[key];
+  };
+
   return (
     <tr 
       className="table-row-hover transition-all duration-200 hover:shadow-md hover:bg-[rgb(var(--foreground))/5]"
@@ -54,11 +61,13 @@ function TokenItem({ token, onClick, onRateClick }) {
           </div>
         </div>
       </td>
-      <td className="table-cell text-right py-4 px-4 sm:px-6">{formatRate(token.binanceFunding, 'Binance')}</td>
-      <td className="table-cell text-right py-4 px-4 sm:px-6">{formatRate(token.okexFunding, 'OKX')}</td>
-      <td className="table-cell text-right py-4 px-4 sm:px-6">{formatRate(token.bybitFunding, 'Bybit')}</td>
-      <td className="table-cell text-right py-4 px-4 sm:px-6">{formatRate(token.gateFunding, 'Gate.io')}</td>
-      <td className="table-cell text-right py-4 px-4 sm:px-6">{formatRate(token.mexcFunding, 'MEXC')}</td>
+      
+      {/* Динамічно відображаємо стовпці для всіх бірж */}
+      {exchanges.map(exchange => (
+        <td key={exchange} className="table-cell text-right py-4 px-4 sm:px-6">
+          {formatRate(getExchangeFunding(exchange), exchange)}
+        </td>
+      ))}
     </tr>
   );
 }
@@ -66,13 +75,10 @@ function TokenItem({ token, onClick, onRateClick }) {
 TokenItem.propTypes = {
   token: PropTypes.shape({
     symbol: PropTypes.string.isRequired,
-    fundingRate: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    binanceFunding: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    okexFunding: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    bybitFunding: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    gateFunding: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    mexcFunding: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    fundingRate: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+    // Динамічні властивості для бірж не описуємо в PropTypes
   }).isRequired,
+  exchanges: PropTypes.arrayOf(PropTypes.string).isRequired,
   onClick: PropTypes.func.isRequired,
   onRateClick: PropTypes.func.isRequired,
 };

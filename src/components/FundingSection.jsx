@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import TokenItem from './TokenItem';
 import ExchangeIcon from './ExchangeIcon';
@@ -8,6 +8,33 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
   const [filterThreshold, setFilterThreshold] = useState(0.15);
   const [showFilter, setShowFilter] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [availableExchanges, setAvailableExchanges] = useState([]);
+
+  // Визначаємо доступні біржі на основі отриманих даних
+  useEffect(() => {
+    if (fundingData && fundingData.length > 0) {
+      // Отримуємо всі ключі першого елемента даних, щоб знайти назви бірж
+      const firstItem = fundingData[0];
+      const exchangeKeys = Object.keys(firstItem).filter(key => 
+        // Шукаємо всі ключі, які є фандинг-ставками (але не fundingRate, який є середнім значенням)
+        key !== 'symbol' && 
+        key !== 'indexPrice' && 
+        key !== 'fundingRate' && 
+        // Фільтруємо ключі, які містять "Funding" для сумісності зі старим форматом
+        !key.includes('Funding')
+      );
+      
+      setAvailableExchanges(exchangeKeys.map(key => {
+        // Нормалізуємо назви бірж для відображення
+        const exchangeName = key
+          .replace(/([A-Z])/g, ' $1') // Додаємо пробіл перед великою літерою
+          .replace(/^./, str => str.toUpperCase()) // Робимо першу літеру великою
+          .trim();
+        
+        return { key, displayName: exchangeName };
+      }));
+    }
+  }, [fundingData]);
 
   const filteredTokens = fundingData
     .filter(token => {
@@ -32,6 +59,9 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
     console.log(`FundingSection: Selecting rate for ${token.symbol} on ${exchange}: ${rate}`);
     onSelectRate(token, exchange, rate);
   };
+
+  // Отримуємо список ключів бірж для передачі в TokenItem
+  const exchangeKeys = availableExchanges.map(exchange => exchange.key);
 
   return (
     <section className="card overflow-hidden animate-fade">
@@ -114,36 +144,19 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
             <thead>
               <tr className="border-b border-[rgb(var(--border))] bg-[rgb(var(--card))]">
                 <th className="table-cell table-header text-left py-3 px-4 sm:px-6 font-semibold">Символ</th>
-                <th className="table-cell table-header text-right py-3 px-4 sm:px-6 font-semibold">
-                  <div className="flex items-center justify-end gap-1">
-                    <ExchangeIcon exchange="Binance" size={16} />
-                    <span>Binance</span>
-                  </div>
-                </th>
-                <th className="table-cell table-header text-right py-3 px-4 sm:px-6 font-semibold">
-                  <div className="flex items-center justify-end gap-1">
-                    <ExchangeIcon exchange="OKX" size={16} />
-                    <span>OKX</span>
-                  </div>
-                </th>
-                <th className="table-cell table-header text-right py-3 px-4 sm:px-6 font-semibold">
-                  <div className="flex items-center justify-end gap-1">
-                    <ExchangeIcon exchange="Bybit" size={16} />
-                    <span>Bybit</span>
-                  </div>
-                </th>
-                <th className="table-cell table-header text-right py-3 px-4 sm:px-6 font-semibold">
-                  <div className="flex items-center justify-end gap-1">
-                    <ExchangeIcon exchange="Gate.io" size={16} />
-                    <span>Gate.io</span>
-                  </div>
-                </th>
-                <th className="table-cell table-header text-right py-3 px-4 sm:px-6 font-semibold">
-                  <div className="flex items-center justify-end gap-1">
-                    <ExchangeIcon exchange="MEXC" size={16} />
-                    <span>MEXC</span>
-                  </div>
-                </th>
+                
+                {/* Динамічно створюємо заголовки для всіх бірж */}
+                {availableExchanges.map(exchange => (
+                  <th 
+                    key={exchange.key} 
+                    className="table-cell table-header text-right py-3 px-4 sm:px-6 font-semibold"
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      <ExchangeIcon exchange={exchange.displayName} size={16} />
+                      <span>{exchange.displayName}</span>
+                    </div>
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-[rgb(var(--border))]">
@@ -151,13 +164,14 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
                 <TokenItem 
                   key={token.symbol} 
                   token={token}
+                  exchanges={exchangeKeys}
                   onClick={() => onSelectToken(token)}
                   onRateClick={handleRateClick}
                 />
               ))}
               {!isLoading && filteredTokens.length === 0 && (
                 <tr>
-                  <td colSpan="6" className="table-cell text-center py-8 opacity-70">
+                  <td colSpan={availableExchanges.length + 1} className="table-cell text-center py-8 opacity-70">
                     {searchQuery ? 
                       `Немає результатів для "${searchQuery}"` :
                       `Немає даних з фандингом ≥ ${filterThreshold}%`}
@@ -182,11 +196,7 @@ FundingSection.propTypes = {
     PropTypes.shape({
       symbol: PropTypes.string.isRequired,
       fundingRate: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-      binanceFunding: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-      okexFunding: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-      bybitFunding: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-      gateFunding: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-      mexcFunding: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+      // Динамічні властивості для різних бірж не вказуємо в PropTypes
     })
   ).isRequired,
   isLoading: PropTypes.bool.isRequired,
