@@ -12,9 +12,6 @@ const ENDPOINTS = {
   // Кумулятивні ставки фандингу за період
   CUMULATIVE_FUNDING: "/api/futures/fundingRate/cumulative-exchange-list",
   
-  // Історія ставок фандингу
-  FUNDING_HISTORY: "/api/futures/funding-rate/history",
-  
   // Ринкові дані для ф'ючерсних монет (ціна, ліквідність, об'єм торгів)
   COINS_MARKETS: "/api/futures/coins-markets",
   
@@ -27,71 +24,14 @@ const ENDPOINTS = {
 
 // Функція для створення конфігурації запитів
 const createRequestConfig = () => {
-  const config = {
+  return {
     headers: {
       'accept': 'application/json',
       'CG-API-KEY': API_KEY
-    }
+    },
+    // Додаємо таймаут для запитів
+    timeout: 15000
   };
-  
-  console.log('🔑 Запит буде відправлено з API ключем:', API_KEY ? `${API_KEY.substring(0, 4)}...${API_KEY.substring(API_KEY.length - 4)}` : 'ВІДСУТНІЙ КЛЮЧ');
-  
-  return config;
-};
-
-/**
- * Тестовий запит для перевірки з'єднання з API
- */
-export const testApiConnection = async () => {
-  try {
-    console.log('🧪 Тестування з\'єднання з API Coinglass...');
-    console.log(`🌐 URL: ${API_BASE_URL}/api/futures/fundingRate/exchange-list`);
-    
-    if (!API_KEY) {
-      console.error('❌ API ключ не надано! Запит буде відхилено.');
-      return { success: false, error: 'API_KEY не надано' };
-    }
-    
-    const startTime = Date.now();
-    const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.FUNDING_RATES}`, createRequestConfig());
-    const endTime = Date.now();
-    
-    console.log(`⏱️ Час відповіді: ${endTime - startTime}ms`);
-    console.log('📊 Структура відповіді:', Object.keys(response.data));
-    
-    if (response.data && response.data.success) {
-      console.log('✅ Запит успішний!');
-      console.log(`📈 Отримано дані для ${Object.keys(response.data.data).length} криптовалют`);
-      
-      // Виводимо приклад перших 2-х елементів
-      const sampleKeys = Object.keys(response.data.data).slice(0, 2);
-      console.log('📋 Зразок даних:');
-      sampleKeys.forEach(key => {
-        console.log(`- ${key}:`, response.data.data[key]);
-      });
-      
-      return { success: true, data: response.data.data };
-    } else {
-      console.error('❌ Помилка в API відповіді:', response.data);
-      return { success: false, error: response.data };
-    }
-  } catch (error) {
-    console.error('❌ Помилка при тестуванні API:', error);
-    
-    // Виводимо детальну інформацію про помилку
-    if (error.response) {
-      console.error('📡 Статус відповіді:', error.response.status);
-      console.error('📡 Заголовки відповіді:', error.response.headers);
-      console.error('📡 Дані відповіді:', error.response.data);
-    } else if (error.request) {
-      console.error('📡 Запит був зроблений, але відповідь не отримана');
-      console.error('📡 Деталі запиту:', error.request);
-    } else {
-      console.error('📡 Помилка при створенні запиту:', error.message);
-    }
-    
-    return { success: false, error: error.toString(), details: error.response?.data };
-  }
 };
 
 /**
@@ -99,93 +39,66 @@ export const testApiConnection = async () => {
  */
 export const fetchFundingRates = async () => {
   try {
-    console.log('📥 Отримання поточних ставок фандингу...');
-    
     if (!API_KEY) {
-      console.error('❌ API-ключ не надано');
+      console.error('API-ключ не надано. Перевірте файл .env або змінні середовища.');
       throw new Error('API-ключ не надано');
     }
     
-    const startTime = Date.now();
-    const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.FUNDING_RATES}`, createRequestConfig());
-    const endTime = Date.now();
+    // Виводимо URL для дебагу
+    const url = `${API_BASE_URL}${ENDPOINTS.FUNDING_RATES}`;
+    console.log(`Виконуємо запит до: ${url}`);
     
-    console.log(`⏱️ Час відповіді: ${endTime - startTime}ms`);
-    
-    if (response.data && response.data.success && response.data.data) {
-      console.log('✅ Успішно отримано дані про фандинг');
-      console.log(`📊 Отримано інформацію для ${Object.keys(response.data.data).length} криптовалют`);
-      
-      const formattedData = formatFundingData(response.data.data);
-      console.log(`📈 Дані відформатовано успішно для ${formattedData.length} криптовалют`);
-      
-      return formattedData;
-    }
-    
-    console.error('❌ Неправильний формат відповіді API:', response.data);
-    throw new Error('Неправильний формат відповіді API');
-  } catch (error) {
-    console.error('❌ Помилка отримання даних про фандинг:', error);
-    
-    // Виводимо детальну інформацію про помилку
-    if (error.response) {
-      console.error('📡 Статус відповіді:', error.response.status);
-      console.error('📡 Заголовки відповіді:', error.response.headers);
-      console.error('📡 Дані відповіді:', error.response.data);
-    }
-    
-    throw error;
-  }
-};
-
-/**
- * Отримання історії ставок фандингу
- * @param {string} symbol - Символ криптовалюти (наприклад, "BTC")
- * @param {string} exchange - Біржа (наприклад, "Binance")
- * @param {string} interval - Інтервал (наприклад, "1d" для щоденних ставок)
- */
-export const fetchFundingHistory = async (symbol, exchange = "Binance", interval = "1d") => {
-  try {
-    console.log(`📥 Отримання історії фандингу для ${symbol} на ${exchange} (інтервал: ${interval})...`);
-    
-    if (!API_KEY) {
-      console.error('❌ API-ключ не надано');
-      throw new Error('API-ключ не надано');
-    }
-    
-    // Додаємо USDT до символу, якщо він ще не має суфіксу
-    const fullSymbol = symbol.includes('USDT') ? symbol : `${symbol}USDT`;
-    
-    const url = `${API_BASE_URL}${ENDPOINTS.FUNDING_HISTORY}?symbol=${fullSymbol}&exchange=${exchange}&interval=${interval}`;
-    console.log(`🌐 URL запиту: ${url}`);
-    
-    const startTime = Date.now();
     const response = await axios.get(url, createRequestConfig());
-    const endTime = Date.now();
-    
-    console.log(`⏱️ Час відповіді: ${endTime - startTime}ms`);
-    
-    if (response.data && response.data.code === "0" && response.data.data) {
-      console.log('✅ Успішно отримано історію фандингу');
-      console.log(`📊 Отримано ${response.data.data.length} записів`);
-      
-      // Виводимо приклад останніх 2-х записів для перевірки
-      const sampleData = response.data.data.slice(-2);
-      console.log('📋 Останні записи:', sampleData);
-      
-      return response.data.data;
+
+    // Перевіряємо наявність даних та структуру відповіді
+    if (!response.data) {
+      console.error('API повернув порожню відповідь');
+      throw new Error('Порожня відповідь від API');
     }
     
-    console.error('❌ Неправильний формат відповіді API для історії фандингу:', response.data);
-    throw new Error('Неправильний формат відповіді API для історії фандингу');
-  } catch (error) {
-    console.error(`❌ Помилка отримання історії фандингу для ${symbol}:`, error);
+    if (!response.data.success) {
+      console.error('API повернув помилку:', response.data);
+      throw new Error(response.data.message || 'API повернув помилку');
+    }
     
-    // Виводимо детальну інформацію про помилку
+    if (!response.data.data || Object.keys(response.data.data).length === 0) {
+      console.error('API повернув пусті дані:', response.data);
+      throw new Error('Отримано порожній список даних від API');
+    }
+    
+    // Форматуємо та повертаємо дані
+    const formattedData = formatFundingData(response.data.data);
+    console.log(`Отримано ${formattedData.length} записів з API`);
+    return formattedData;
+    
+  } catch (error) {
+    // Детальний лог помилки для дебагу
     if (error.response) {
-      console.error('📡 Статус відповіді:', error.response.status);
-      console.error('📡 Заголовки відповіді:', error.response.headers);
-      console.error('📡 Дані відповіді:', error.response.data);
+      // Сервер відповів з кодом помилки
+      console.error('Помилка відповіді API:', {
+        status: error.response.status,
+        data: error.response.data,
+        headers: error.response.headers
+      });
+    } else if (error.request) {
+      // Запит був зроблений, але відповіді не отримано
+      console.error('Немає відповіді від сервера:', error.request);
+    } else {
+      // Щось пішло не так при налаштуванні запиту
+      console.error('Помилка запиту:', error.message);
+    }
+    
+    // Додатково перевіряємо часті причини помилок
+    if (error.message.includes('Network Error')) {
+      console.error('Помилка мережі. Перевірте підключення до інтернету або CORS налаштування.');
+    } else if (error.message.includes('timeout')) {
+      console.error('Запит перевищив часовий ліміт.');
+    } else if (error.response && error.response.status === 401) {
+      console.error('Неавторизований доступ. Перевірте API-ключ.');
+    } else if (error.response && error.response.status === 403) {
+      console.error('Доступ заборонено. Перевірте права доступу для API-ключа.');
+    } else if (error.response && error.response.status === 429) {
+      console.error('Перевищено ліміт запитів API.');
     }
     
     throw error;
@@ -199,40 +112,29 @@ export const fetchFundingHistory = async (symbol, exchange = "Binance", interval
  */
 export const fetchCumulativeFunding = async (symbol, days = 7) => {
   try {
-    console.log(`📥 Отримання кумулятивного фандингу для ${symbol} за ${days} днів...`);
-    
     if (!API_KEY) {
-      console.error('❌ API-ключ не надано');
+      console.error('API-ключ не надано');
       throw new Error('API-ключ не надано');
     }
     
+    if (!symbol) {
+      console.error('Символ монети не вказано');
+      throw new Error('Символ монети не вказано');
+    }
+    
     const url = `${API_BASE_URL}${ENDPOINTS.CUMULATIVE_FUNDING}?symbol=${symbol}&days=${days}`;
-    console.log(`🌐 URL запиту: ${url}`);
+    console.log(`Виконуємо запит до: ${url}`);
     
-    const startTime = Date.now();
     const response = await axios.get(url, createRequestConfig());
-    const endTime = Date.now();
     
-    console.log(`⏱️ Час відповіді: ${endTime - startTime}ms`);
-    
-    if (response.data && response.data.success && response.data.data) {
-      console.log('✅ Успішно отримано кумулятивний фандинг');
-      console.log('📊 Структура даних:', response.data.data);
-      return response.data.data;
+    if (!response.data || !response.data.success || !response.data.data) {
+      console.error('Неправильний формат відповіді API:', response.data);
+      throw new Error('Неправильний формат відповіді API');
     }
     
-    console.error('❌ Неправильний формат відповіді API для кумулятивного фандингу:', response.data);
-    throw new Error('Неправильний формат відповіді API для кумулятивного фандингу');
+    return response.data.data;
   } catch (error) {
-    console.error(`❌ Помилка отримання кумулятивного фандингу для ${symbol}:`, error);
-    
-    // Виводимо детальну інформацію про помилку
-    if (error.response) {
-      console.error('📡 Статус відповіді:', error.response.status);
-      console.error('📡 Заголовки відповіді:', error.response.headers);
-      console.error('📡 Дані відповіді:', error.response.data);
-    }
-    
+    console.error(`Помилка отримання кумулятивного фандингу для ${symbol}:`, error);
     throw error;
   }
 };
@@ -243,40 +145,24 @@ export const fetchCumulativeFunding = async (symbol, days = 7) => {
  */
 export const fetchCoinsMarkets = async (symbol = '') => {
   try {
-    console.log(`📥 Отримання ринкових даних${symbol ? ` для ${symbol}` : ''}...`);
-    
     if (!API_KEY) {
-      console.error('❌ API-ключ не надано');
+      console.error('API-ключ не надано');
       throw new Error('API-ключ не надано');
     }
     
     const url = `${API_BASE_URL}${ENDPOINTS.COINS_MARKETS}${symbol ? `?symbol=${symbol}` : ''}`;
-    console.log(`🌐 URL запиту: ${url}`);
+    console.log(`Виконуємо запит до: ${url}`);
     
-    const startTime = Date.now();
     const response = await axios.get(url, createRequestConfig());
-    const endTime = Date.now();
     
-    console.log(`⏱️ Час відповіді: ${endTime - startTime}ms`);
-    
-    if (response.data && response.data.success && response.data.data) {
-      console.log('✅ Успішно отримано ринкові дані');
-      console.log(`📊 Обсяг даних: ${JSON.stringify(response.data.data).length} символів`);
-      return response.data.data;
+    if (!response.data || !response.data.success || !response.data.data) {
+      console.error('Неправильний формат відповіді API:', response.data);
+      throw new Error('Неправильний формат відповіді API');
     }
     
-    console.error('❌ Неправильний формат відповіді API для ринкових даних:', response.data);
-    throw new Error('Неправильний формат відповіді API для ринкових даних');
+    return response.data.data;
   } catch (error) {
-    console.error('❌ Помилка отримання ринкових даних:', error);
-    
-    // Виводимо детальну інформацію про помилку
-    if (error.response) {
-      console.error('📡 Статус відповіді:', error.response.status);
-      console.error('📡 Заголовки відповіді:', error.response.headers);
-      console.error('📡 Дані відповіді:', error.response.data);
-    }
-    
+    console.error('Помилка отримання ринкових даних:', error);
     throw error;
   }
 };
@@ -287,40 +173,24 @@ export const fetchCoinsMarkets = async (symbol = '') => {
  */
 export const fetchSupportedExchangesAndPairs = async (symbol = '') => {
   try {
-    console.log(`📥 Отримання підтримуваних бірж і пар${symbol ? ` для ${symbol}` : ''}...`);
-    
     if (!API_KEY) {
-      console.error('❌ API-ключ не надано');
+      console.error('API-ключ не надано');
       throw new Error('API-ключ не надано');
     }
     
     const url = `${API_BASE_URL}${ENDPOINTS.SUPPORTED_EXCHANGES_PAIRS}${symbol ? `?symbol=${symbol}` : ''}`;
-    console.log(`🌐 URL запиту: ${url}`);
+    console.log(`Виконуємо запит до: ${url}`);
     
-    const startTime = Date.now();
     const response = await axios.get(url, createRequestConfig());
-    const endTime = Date.now();
     
-    console.log(`⏱️ Час відповіді: ${endTime - startTime}ms`);
-    
-    if (response.data && response.data.success && response.data.data) {
-      console.log('✅ Успішно отримано дані про підтримувані біржі і пари');
-      console.log('📊 Приклад даних:', response.data.data.slice(0, 2));
-      return response.data.data;
+    if (!response.data || !response.data.success || !response.data.data) {
+      console.error('Неправильний формат відповіді API:', response.data);
+      throw new Error('Неправильний формат відповіді API');
     }
     
-    console.error('❌ Неправильний формат відповіді API для підтримуваних бірж і пар:', response.data);
-    throw new Error('Неправильний формат відповіді API для підтримуваних бірж і пар');
+    return response.data.data;
   } catch (error) {
-    console.error('❌ Помилка отримання підтримуваних бірж і пар:', error);
-    
-    // Виводимо детальну інформацію про помилку
-    if (error.response) {
-      console.error('📡 Статус відповіді:', error.response.status);
-      console.error('📡 Заголовки відповіді:', error.response.headers);
-      console.error('📡 Дані відповіді:', error.response.data);
-    }
-    
+    console.error('Помилка отримання підтримуваних бірж і пар:', error);
     throw error;
   }
 };
@@ -332,55 +202,54 @@ export const fetchSupportedExchangesAndPairs = async (symbol = '') => {
  */
 export const fetchOrderBook = async (symbol, exchange) => {
   try {
-    console.log(`📥 Отримання книги ордерів для ${symbol} на біржі ${exchange}...`);
-    
     if (!API_KEY) {
-      console.error('❌ API-ключ не надано');
+      console.error('API-ключ не надано');
       throw new Error('API-ключ не надано');
     }
     
+    if (!symbol || !exchange) {
+      console.error('Не вказано символ або біржу');
+      throw new Error('Не вказано символ або біржу');
+    }
+    
     const url = `${API_BASE_URL}${ENDPOINTS.ORDER_BOOK}?symbol=${symbol}&exchange=${exchange}`;
-    console.log(`🌐 URL запиту: ${url}`);
+    console.log(`Виконуємо запит до: ${url}`);
     
-    const startTime = Date.now();
     const response = await axios.get(url, createRequestConfig());
-    const endTime = Date.now();
     
-    console.log(`⏱️ Час відповіді: ${endTime - startTime}ms`);
-    
-    if (response.data && response.data.success && response.data.data) {
-      console.log('✅ Успішно отримано книгу ордерів');
-      return response.data.data;
+    if (!response.data || !response.data.success || !response.data.data) {
+      console.error('Неправильний формат відповіді API:', response.data);
+      throw new Error('Неправильний формат відповіді API');
     }
     
-    console.error('❌ Неправильний формат відповіді API для книги ордерів:', response.data);
-    throw new Error('Неправильний формат відповіді API для книги ордерів');
+    return response.data.data;
   } catch (error) {
-    console.error(`❌ Помилка отримання книги ордерів для ${symbol} на біржі ${exchange}:`, error);
-    
-    // Виводимо детальну інформацію про помилку
-    if (error.response) {
-      console.error('📡 Статус відповіді:', error.response.status);
-      console.error('📡 Заголовки відповіді:', error.response.headers);
-      console.error('📡 Дані відповіді:', error.response.data);
-    }
-    
+    console.error(`Помилка отримання книги ордерів для ${symbol} на біржі ${exchange}:`, error);
     throw error;
   }
 };
 
 // Форматування даних з API для використання в додатку
 const formatFundingData = (data) => {
-  console.log('🔄 Форматування даних фандингу...');
-  console.log('📋 Приклад вхідних даних:', Object.keys(data).slice(0, 3).map(key => ({ key, value: data[key] })));
-  
   try {
+    console.log('Форматування даних про фандинг...');
+    
+    // Перевіряємо, чи data є об'єктом
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      console.error('Неправильний формат вхідних даних:', data);
+      throw new Error('Неправильний формат вхідних даних');
+    }
+    
     // Конвертуємо об'єкт у масив для легшої фільтрації
-    const formattedData = Object.values(data).map(item => {
-      // Створюємо базову структуру для елемента
+    const result = Object.values(data).map(item => {
+      if (!item || !item.symbol) {
+        console.warn('Знайдено елемент без символу:', item);
+        return null; // Пропускаємо елементи без символу
+      }
+      
       const formattedItem = {
         symbol: item.symbol,
-        indexPrice: item.usdPrice || item.indexPrice
+        indexPrice: item.usdPrice || item.indexPrice || 0
       };
       
       // Додаємо всі наявні фандинг-ставки з API
@@ -396,41 +265,47 @@ const formatFundingData = (data) => {
       });
       
       // Об'єднуємо дані
-      const result = {
+      const resultItem = {
         ...formattedItem,
         ...exchangeRates,
         // Обчислюємо середній фандинг для сортування і фільтрації
         fundingRate: calculateAverageFunding(item)
       };
       
-      return result;
-    });
+      return resultItem;
+    }).filter(Boolean); // Видаляємо null елементи
     
-    console.log('✅ Форматування завершено успішно');
-    console.log('📋 Приклад вихідних даних:', formattedData.slice(0, 2));
-    
-    return formattedData;
+    console.log(`Сформатовано ${result.length} елементів`);
+    return result;
   } catch (error) {
-    console.error('❌ Помилка при форматуванні даних:', error);
+    console.error('Помилка форматування даних:', error);
     throw error;
   }
 };
 
 // Обчислюємо середній фандинг для криптовалюти
 const calculateAverageFunding = (item) => {
-  // Збираємо всі доступні ставки фандингу з різних бірж
-  const rates = [];
-  Object.keys(item).forEach(key => {
-    if (key.includes('FundingRate') && key !== 'nextFundingRate') {
-      const rate = item[key];
-      if (rate !== undefined && rate !== null && rate !== '-') {
-        rates.push(parseFloat(rate));
+  try {
+    // Збираємо всі доступні ставки фандингу з різних бірж
+    const rates = [];
+    Object.keys(item).forEach(key => {
+      if (key.includes('FundingRate') && key !== 'nextFundingRate') {
+        const rate = item[key];
+        if (rate !== undefined && rate !== null && rate !== '-') {
+          const parsedRate = parseFloat(rate);
+          if (!isNaN(parsedRate)) {
+            rates.push(parsedRate);
+          }
+        }
       }
-    }
-  });
-  
-  if (rates.length === 0) return 0;
-  
-  const sum = rates.reduce((acc, rate) => acc + rate, 0);
-  return sum / rates.length;
+    });
+    
+    if (rates.length === 0) return 0;
+    
+    const sum = rates.reduce((acc, rate) => acc + rate, 0);
+    return sum / rates.length;
+  } catch (error) {
+    console.error('Помилка обчислення середнього фандингу:', error);
+    return 0; // Повертаємо 0 у випадку помилки
+  }
 };
