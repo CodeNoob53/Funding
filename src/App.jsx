@@ -5,6 +5,10 @@ import CalculatorSection from './components/CalculatorSection';
 import Footer from './components/Footer';
 import { fetchFundingRates } from './services/api';
 import useThemeStore from './store/themeStore';
+import logger from './services/logger';
+
+// Версія додатку для відстеження у логах
+const APP_VERSION = import.meta.env.VITE_APP_VERSION || '0.2.0';
 
 function App() {
   const [fundingData, setFundingData] = useState([]);
@@ -12,56 +16,76 @@ function App() {
   const [error, setError] = useState(null);
   const [selectedToken, setSelectedToken] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [retryCount, setRetryCount] = useState(0);
   const theme = useThemeStore((state) => state.theme);
+
+  // Логування при ініціалізації додатку
+  useEffect(() => {
+    logger.info(`Фандинг Калькулятор v${APP_VERSION} запущено`, {
+      environment: import.meta.env.MODE,
+      dateTime: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      language: navigator.language,
+      platform: navigator.platform,
+      screenSize: `${window.innerWidth}x${window.innerHeight}`
+    });
+    
+    // Перевіряємо наявність API ключа
+    if (!import.meta.env.VITE_API_KEY) {
+      logger.warn('API ключ не знайдено в змінних середовища');
+    }
+    
+    // Прослуховуємо глобальні помилки
+    const handleGlobalError = (event) => {
+      logger.error('Незловлена глобальна помилка:', {
+        message: event.message,
+        source: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+        error: event.error
+      });
+    };
+    
+    window.addEventListener('error', handleGlobalError);
+    
+    return () => {
+      window.removeEventListener('error', handleGlobalError);
+      logger.info('Додаток вивантажено');
+    };
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
+    logger.debug(`Тема змінена на: ${theme}`);
   }, [theme]);
 
   useEffect(() => {
     const loadFundingData = async () => {
       try {
         setIsLoading(true);
-        setError(null); // Обнуляємо помилку перед новим запитом
+        logger.info('Початок завантаження даних про фандинг');
         
-        console.log(`Завантаження даних про фандинг (спроба ${retryCount + 1})...`);
         const data = await fetchFundingRates();
-        
-        if (!data || data.length === 0) {
-          console.error('Отримано порожні дані від API');
-          throw new Error('Не вдалося завантажити дані про фандинг');
-        }
-        
         setFundingData(data);
-        setLastUpdated(new Date());
+        
+        const now = new Date();
+        setLastUpdated(now);
+        
+        logger.info(`Дані про фандинг успішно завантажено (${data.length} записів)`, {
+          timestamp: now.toISOString(),
+          tokenCount: data.length,
+          topTokens: data.slice(0, 3).map(token => token.symbol)
+        });
+        
         setError(null);
-        console.log(`Успішно завантажено ${data.length} записів про фандинг`);
       } catch (err) {
-        console.error('Помилка завантаження даних про фандинг:', err);
-        
-        // Встановлюємо дружнє повідомлення про помилку
-        let errorMessage = 'Не вдалося завантажити дані про фандинг';
-        
-        // Можемо змінити повідомлення для конкретних помилок
-        if (err.message.includes('API-ключ не надано')) {
-          errorMessage = 'Потрібен API-ключ для доступу до даних';
-        } else if (err.message.includes('Network Error')) {
-          errorMessage = 'Проблема з\'єднання з сервером. Перевірте інтернет.';
-        } else if (err.response && err.response.status === 401) {
-          errorMessage = 'Невірний API-ключ або помилка авторизації';
-        } else if (err.response && err.response.status === 429) {
-          errorMessage = 'Перевищено ліміт запитів до API';
-        }
-        
+        const errorMessage = 'Не вдалося завантажити дані про фандинг';
         setError(errorMessage);
         
-        // Якщо це не помилка API-ключа і не перевищення ліміту, 
-        // можна спробувати перезавантажити дані автоматично
-        if (!err.message.includes('API-ключ') && 
-            (!err.response || (err.response && err.response.status !== 429))) {
-          setRetryCount(prev => prev + 1);
-        }
+        logger.error(errorMessage, {
+          originalError: err.message,
+          stack: err.stack,
+          time: new Date().toISOString()
+        });
       } finally {
         setIsLoading(false);
       }
@@ -69,28 +93,38 @@ function App() {
 
     loadFundingData();
     
-    // Якщо дані не завантажились, спробуємо повторити запит кілька разів
-    // але не більше 3 спроб, з інтервалом у 3 секунди
-    if (retryCount > 0 && retryCount < 3) {
-      const timer = setTimeout(() => {
-        loadFundingData();
-      }, 3000);
-      
-      return () => clearTimeout(timer);
-    }
+    // Налаштовуємо інтервал оновлення даних (15 хвилин)
+    const intervalId = setInterval(() => {
+      logger.debug('Запуск періодичного оновлення даних фандингу');
+      loadFundingData();
+    }, 15 * 60 * 1000);
     
-    // Оновлюємо дані кожні 15 хвилин
-    const intervalId = setInterval(loadFundingData, 15 * 60 * 1000);
-    return () => clearInterval(intervalId);
-  }, [retryCount]);
+    return () => {
+      logger.debug('Очищення інтервалу оновлення даних');
+      clearInterval(intervalId);
+    };
+  }, []);
 
   const handleSelectToken = (token) => {
     setSelectedToken(token);
-    console.log('Token selected in App:', token);
+    logger.debug(`Вибрано токен: ${token.symbol}`, {
+      tokenSymbol: token.symbol,
+      fundingRate: token.fundingRate,
+      exchanges: Object.keys(token).filter(key => 
+        !key.includes('NextFundingTime') && 
+        key !== 'symbol' && 
+        key !== 'indexPrice' && 
+        key !== 'fundingRate'
+      )
+    });
   };
 
   const handleSelectRate = (token, exchange, rate) => {
-    console.log(`App: Selected token - ${token.symbol}, Exchange: ${exchange}, Rate: ${rate}`);
+    logger.debug(`Вибрано ставку: ${token.symbol} на ${exchange} (${rate})`, {
+      tokenSymbol: token.symbol,
+      exchange,
+      rate
+    });
 
     // Оновлюємо вибраний токен із додатковими параметрами
     const updatedToken = {
@@ -110,40 +144,14 @@ function App() {
     return `${hours}:${minutes}`;
   };
 
-  // Функція для ручного оновлення даних
-  const handleRefreshData = () => {
-    setRetryCount(0); // Обнуляємо лічильник спроб
-    setLastUpdated(null); // Обнуляємо час останнього оновлення
-  };
-
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
 
       <main className="flex-1 container mx-auto px-4 py-8">
         {lastUpdated && (
-          <div className="mb-4 text-sm text-[rgb(var(--foreground))/60] flex justify-between items-center">
-            <div></div> {/* Порожній елемент для вирівнювання */}
-            <div className="flex items-center gap-4">
-              <button 
-                onClick={handleRefreshData}
-                disabled={isLoading}
-                className="text-sm flex items-center gap-1 text-[rgb(var(--primary))] hover:underline"
-              >
-                {isLoading ? (
-                  <span className="inline-block w-3 h-3 border-2 border-[rgb(var(--primary))] border-t-transparent rounded-full animate-spin mr-1"></span>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-                    <path d="M21 3v5h-5" />
-                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-                    <path d="M8 16H3v5" />
-                  </svg>
-                )}
-                {isLoading ? 'Оновлення...' : 'Оновити дані'}
-              </button>
-              <span>Останнє оновлення: {formatUpdateTime(lastUpdated)}</span>
-            </div>
+          <div className="mb-4 text-sm text-[rgb(var(--foreground))/60] flex justify-end">
+            Останнє оновлення: {formatUpdateTime(lastUpdated)}
           </div>
         )}
 

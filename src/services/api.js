@@ -1,140 +1,81 @@
 import axios from 'axios';
+import logger from './logger';
 
 // Базовий URL API v4
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://open-api-v4.coinglass.com";
 const API_KEY = import.meta.env.VITE_API_KEY || "";
 
+// Налаштування логування запитів і відповідей
+const IS_DEBUG = import.meta.env.VITE_DEBUG === 'true' || false;
+
 // Ендпоінти API
 const ENDPOINTS = {
   // Поточні ставки фандингу по біржах
-  FUNDING_RATES: "/api/futures/fundingRate/exchange-list",
-  
-  // Кумулятивні ставки фандингу за період
-  CUMULATIVE_FUNDING: "/api/futures/fundingRate/cumulative-exchange-list",
+  FUNDING_RATES: "/api/futures/funding-rate/exchange-list",
   
   // Ринкові дані для ф'ючерсних монет (ціна, ліквідність, об'єм торгів)
   COINS_MARKETS: "/api/futures/coins-markets",
   
-  // Підтримувані біржі та торгові пари
-  SUPPORTED_EXCHANGES_PAIRS: "/api/futures/supported-exchange-and-pairs",
-  
-  // Поточні ордери для аналізу глибини ринку
-  ORDER_BOOK: "/api/futures/orderbook/bid-ask"
+  // Історичні дані фандингу (якщо потрібно в майбутньому)
+  HISTORICAL_FUNDING: "/api/futures/funding-rate/chart",
 };
 
-// Функція для створення конфігурації запитів
+/**
+ * Функція для створення конфігурації запитів
+ * @returns {Object} Конфігурація для axios
+ */
 const createRequestConfig = () => {
   return {
     headers: {
       'accept': 'application/json',
       'CG-API-KEY': API_KEY
-    },
-    // Додаємо таймаут для запитів
-    timeout: 15000
+    }
   };
 };
 
 /**
  * Отримання поточних ставок фандингу по всіх біржах
+ * @returns {Promise<Array>} Масив об'єктів з даними про фандинг
  */
 export const fetchFundingRates = async () => {
+  const endpoint = ENDPOINTS.FUNDING_RATES;
+  const url = `${API_BASE_URL}${endpoint}`;
+  
   try {
     if (!API_KEY) {
-      console.error('API-ключ не надано. Перевірте файл .env або змінні середовища.');
-      throw new Error('API-ключ не надано');
+      const error = new Error('API-ключ не надано');
+      logger.error('Відсутній API-ключ для CoinGlass', error);
+      throw error;
     }
     
-    // Виводимо URL для дебагу
-    const url = `${API_BASE_URL}${ENDPOINTS.FUNDING_RATES}`;
-    console.log(`Виконуємо запит до: ${url}`);
+    logger.debug(`Запит фандинг ставок з ${url}`);
+    const startTime = performance.now();
     
     const response = await axios.get(url, createRequestConfig());
-
-    // Перевіряємо наявність даних та структуру відповіді
-    if (!response.data) {
-      console.error('API повернув порожню відповідь');
-      throw new Error('Порожня відповідь від API');
-    }
     
-    if (!response.data.success) {
-      console.error('API повернув помилку:', response.data);
-      throw new Error(response.data.message || 'API повернув помилку');
-    }
+    const endTime = performance.now();
+    logger.debug(`Відповідь отримана за ${(endTime - startTime).toFixed(2)}ms`);
     
-    if (!response.data.data || Object.keys(response.data.data).length === 0) {
-      console.error('API повернув пусті дані:', response.data);
-      throw new Error('Отримано порожній список даних від API');
-    }
-    
-    // Форматуємо та повертаємо дані
-    const formattedData = formatFundingData(response.data.data);
-    console.log(`Отримано ${formattedData.length} записів з API`);
-    return formattedData;
-    
-  } catch (error) {
-    // Детальний лог помилки для дебагу
-    if (error.response) {
-      // Сервер відповів з кодом помилки
-      console.error('Помилка відповіді API:', {
-        status: error.response.status,
-        data: error.response.data,
-        headers: error.response.headers
+    if (IS_DEBUG) {
+      logger.debug('Відповідь API:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+        data: response.data
       });
-    } else if (error.request) {
-      // Запит був зроблений, але відповіді не отримано
-      console.error('Немає відповіді від сервера:', error.request);
-    } else {
-      // Щось пішло не так при налаштуванні запиту
-      console.error('Помилка запиту:', error.message);
     }
-    
-    // Додатково перевіряємо часті причини помилок
-    if (error.message.includes('Network Error')) {
-      console.error('Помилка мережі. Перевірте підключення до інтернету або CORS налаштування.');
-    } else if (error.message.includes('timeout')) {
-      console.error('Запит перевищив часовий ліміт.');
-    } else if (error.response && error.response.status === 401) {
-      console.error('Неавторизований доступ. Перевірте API-ключ.');
-    } else if (error.response && error.response.status === 403) {
-      console.error('Доступ заборонено. Перевірте права доступу для API-ключа.');
-    } else if (error.response && error.response.status === 429) {
-      console.error('Перевищено ліміт запитів API.');
-    }
-    
-    throw error;
-  }
-};
 
-/**
- * Отримання кумулятивних ставок фандингу за період
- * @param {string} symbol - Символ криптовалюти (наприклад, "BTC")
- * @param {number} days - Кількість днів для аналізу (за замовчуванням 7)
- */
-export const fetchCumulativeFunding = async (symbol, days = 7) => {
-  try {
-    if (!API_KEY) {
-      console.error('API-ключ не надано');
-      throw new Error('API-ключ не надано');
+    if (response.data && response.data.code === "0" && response.data.data) {
+      const formattedData = formatFundingData(response.data.data);
+      logger.info(`Отримано ${formattedData.length} записів про фандинг`);
+      return formattedData;
     }
     
-    if (!symbol) {
-      console.error('Символ монети не вказано');
-      throw new Error('Символ монети не вказано');
-    }
-    
-    const url = `${API_BASE_URL}${ENDPOINTS.CUMULATIVE_FUNDING}?symbol=${symbol}&days=${days}`;
-    console.log(`Виконуємо запит до: ${url}`);
-    
-    const response = await axios.get(url, createRequestConfig());
-    
-    if (!response.data || !response.data.success || !response.data.data) {
-      console.error('Неправильний формат відповіді API:', response.data);
-      throw new Error('Неправильний формат відповіді API');
-    }
-    
-    return response.data.data;
+    const errorMsg = 'Неправильний формат відповіді API';
+    logger.error(errorMsg, response.data);
+    throw new Error(errorMsg);
   } catch (error) {
-    console.error(`Помилка отримання кумулятивного фандингу для ${symbol}:`, error);
+    logger.apiError('Помилка отримання даних про фандинг', error, endpoint);
     throw error;
   }
 };
@@ -142,170 +83,186 @@ export const fetchCumulativeFunding = async (symbol, days = 7) => {
 /**
  * Отримання ринкових даних для монет (ціна, ліквідність, об'єм)
  * @param {string} symbol - Символ криптовалюти (опціонально)
+ * @returns {Promise<Array>} Масив об'єктів з ринковими даними
  */
 export const fetchCoinsMarkets = async (symbol = '') => {
+  const endpoint = ENDPOINTS.COINS_MARKETS + (symbol ? `?symbol=${symbol}` : '');
+  const url = `${API_BASE_URL}${endpoint}`;
+  
   try {
     if (!API_KEY) {
-      console.error('API-ключ не надано');
-      throw new Error('API-ключ не надано');
+      const error = new Error('API-ключ не надано');
+      logger.error('Відсутній API-ключ для CoinGlass', error);
+      throw error;
     }
     
-    const url = `${API_BASE_URL}${ENDPOINTS.COINS_MARKETS}${symbol ? `?symbol=${symbol}` : ''}`;
-    console.log(`Виконуємо запит до: ${url}`);
+    logger.debug(`Запит ринкових даних з ${url}`);
+    const startTime = performance.now();
     
     const response = await axios.get(url, createRequestConfig());
     
-    if (!response.data || !response.data.success || !response.data.data) {
-      console.error('Неправильний формат відповіді API:', response.data);
-      throw new Error('Неправильний формат відповіді API');
+    const endTime = performance.now();
+    logger.debug(`Відповідь отримана за ${(endTime - startTime).toFixed(2)}ms`);
+    
+    if (IS_DEBUG) {
+      logger.debug('Відповідь API:', {
+        status: response.status,
+        statusText: response.statusText,
+        data: response.data
+      });
     }
     
-    return response.data.data;
+    if (response.data && response.data.code === "0" && response.data.data) {
+      logger.info(`Отримано ринкові дані${symbol ? ` для ${symbol}` : ''}`);
+      return response.data.data;
+    }
+    
+    const errorMsg = 'Неправильний формат відповіді API для ринкових даних';
+    logger.error(errorMsg, response.data);
+    throw new Error(errorMsg);
   } catch (error) {
-    console.error('Помилка отримання ринкових даних:', error);
+    logger.apiError('Помилка отримання ринкових даних', error, endpoint, { symbol });
     throw error;
   }
 };
 
 /**
- * Отримання підтримуваних бірж і торгових пар
- * @param {string} symbol - Символ криптовалюти (опціонально)
+ * Отримання історичних даних фандингу
+ * @param {string} symbol - Символ криптовалюти 
+ * @param {string} exchange - Назва біржі
+ * @param {number} days - Кількість днів для історії (за замовчуванням 7)
+ * @returns {Promise<Object>} Дані історії фандингу
  */
-export const fetchSupportedExchangesAndPairs = async (symbol = '') => {
+export const fetchHistoricalFunding = async (symbol, exchange, days = 7) => {
+  const params = { symbol, exchange, days };
+  const endpoint = `${ENDPOINTS.HISTORICAL_FUNDING}?symbol=${symbol}&exchange=${exchange}&days=${days}`;
+  const url = `${API_BASE_URL}${endpoint}`;
+  
   try {
     if (!API_KEY) {
-      console.error('API-ключ не надано');
-      throw new Error('API-ключ не надано');
+      const error = new Error('API-ключ не надано');
+      logger.error('Відсутній API-ключ для CoinGlass', error);
+      throw error;
     }
     
-    const url = `${API_BASE_URL}${ENDPOINTS.SUPPORTED_EXCHANGES_PAIRS}${symbol ? `?symbol=${symbol}` : ''}`;
-    console.log(`Виконуємо запит до: ${url}`);
+    logger.debug(`Запит історичних даних фандингу з ${url}`, params);
+    const startTime = performance.now();
     
     const response = await axios.get(url, createRequestConfig());
     
-    if (!response.data || !response.data.success || !response.data.data) {
-      console.error('Неправильний формат відповіді API:', response.data);
-      throw new Error('Неправильний формат відповіді API');
+    const endTime = performance.now();
+    logger.debug(`Відповідь отримана за ${(endTime - startTime).toFixed(2)}ms`);
+    
+    if (response.data && response.data.code === "0" && response.data.data) {
+      logger.info(`Отримано історичні дані фандингу для ${symbol} на ${exchange}`);
+      return response.data.data;
     }
     
-    return response.data.data;
+    const errorMsg = 'Неправильний формат відповіді API для історичних даних фандингу';
+    logger.error(errorMsg, response.data);
+    throw new Error(errorMsg);
   } catch (error) {
-    console.error('Помилка отримання підтримуваних бірж і пар:', error);
+    logger.apiError('Помилка отримання історичних даних фандингу', error, endpoint, params);
     throw error;
   }
 };
 
 /**
- * Отримання книги ордерів для аналізу глибини ринку
- * @param {string} symbol - Символ криптовалюти
- * @param {string} exchange - Назва біржі (наприклад, "binance")
+ * Форматування даних з API для використання в додатку
+ * @param {Array} data - Дані з API 
+ * @returns {Array} Відформатовані дані у форматі, придатному для додатку
  */
-export const fetchOrderBook = async (symbol, exchange) => {
-  try {
-    if (!API_KEY) {
-      console.error('API-ключ не надано');
-      throw new Error('API-ключ не надано');
-    }
-    
-    if (!symbol || !exchange) {
-      console.error('Не вказано символ або біржу');
-      throw new Error('Не вказано символ або біржу');
-    }
-    
-    const url = `${API_BASE_URL}${ENDPOINTS.ORDER_BOOK}?symbol=${symbol}&exchange=${exchange}`;
-    console.log(`Виконуємо запит до: ${url}`);
-    
-    const response = await axios.get(url, createRequestConfig());
-    
-    if (!response.data || !response.data.success || !response.data.data) {
-      console.error('Неправильний формат відповіді API:', response.data);
-      throw new Error('Неправильний формат відповіді API');
-    }
-    
-    return response.data.data;
-  } catch (error) {
-    console.error(`Помилка отримання книги ордерів для ${symbol} на біржі ${exchange}:`, error);
-    throw error;
-  }
-};
-
-// Форматування даних з API для використання в додатку
 const formatFundingData = (data) => {
   try {
-    console.log('Форматування даних про фандинг...');
+    logger.debug('Початок форматування даних фандингу', { 
+      dataLength: data.length,
+      sample: data.length > 0 ? data[0] : null 
+    });
     
-    // Перевіряємо, чи data є об'єктом
-    if (!data || typeof data !== 'object' || Array.isArray(data)) {
-      console.error('Неправильний формат вхідних даних:', data);
-      throw new Error('Неправильний формат вхідних даних');
-    }
-    
-    // Конвертуємо об'єкт у масив для легшої фільтрації
-    const result = Object.values(data).map(item => {
-      if (!item || !item.symbol) {
-        console.warn('Знайдено елемент без символу:', item);
-        return null; // Пропускаємо елементи без символу
-      }
-      
-      const formattedItem = {
+    const result = data.map(item => {
+      // Базова інформація про символ
+      const resultItem = {
         symbol: item.symbol,
-        indexPrice: item.usdPrice || item.indexPrice || 0
       };
       
-      // Додаємо всі наявні фандинг-ставки з API
+      // Збираємо всі ставки фандингу з різних бірж
       const exchangeRates = {};
       
-      // Додаємо всі доступні біржі та їх ставки
-      Object.keys(item).forEach(key => {
-        if (key.includes('FundingRate') && key !== 'nextFundingRate') {
-          // Парсимо назву біржі з ключа (наприклад, binanceFundingRate -> binance)
-          const exchangeName = key.replace('FundingRate', '');
-          exchangeRates[exchangeName] = item[key];
-        }
-      });
+      // Додаємо ставки з stablecoin_margin_list (USDT/USD)
+      if (item.stablecoin_margin_list && item.stablecoin_margin_list.length > 0) {
+        item.stablecoin_margin_list.forEach(exchange => {
+          const exchangeName = exchange.exchange.toLowerCase();
+          exchangeRates[exchangeName] = exchange.funding_rate;
+          
+          // Додаємо наступний час фандингу
+          if (exchange.next_funding_time) {
+            exchangeRates[`${exchangeName}NextFundingTime`] = exchange.next_funding_time;
+          }
+          
+          // Додаємо інформацію про інтервал фандингу (в годинах)
+          if (exchange.funding_rate_interval) {
+            exchangeRates[`${exchangeName}Interval`] = exchange.funding_rate_interval;
+          }
+        });
+      }
       
-      // Об'єднуємо дані
-      const resultItem = {
-        ...formattedItem,
-        ...exchangeRates,
-        // Обчислюємо середній фандинг для сортування і фільтрації
-        fundingRate: calculateAverageFunding(item)
-      };
+      // Додаємо ставки з token_margin_list (coin-margined)
+      if (item.token_margin_list && item.token_margin_list.length > 0) {
+        item.token_margin_list.forEach(exchange => {
+          const exchangeName = exchange.exchange.toLowerCase();
+          // Для розрізнення coin-margined додаємо суфікс
+          exchangeRates[`${exchangeName}Coin`] = exchange.funding_rate;
+          
+          if (exchange.next_funding_time) {
+            exchangeRates[`${exchangeName}CoinNextFundingTime`] = exchange.next_funding_time;
+          }
+        });
+      }
       
-      return resultItem;
-    }).filter(Boolean); // Видаляємо null елементи
-    
-    console.log(`Сформатовано ${result.length} елементів`);
-    return result;
-  } catch (error) {
-    console.error('Помилка форматування даних:', error);
-    throw error;
-  }
-};
-
-// Обчислюємо середній фандинг для криптовалюти
-const calculateAverageFunding = (item) => {
-  try {
-    // Збираємо всі доступні ставки фандингу з різних бірж
-    const rates = [];
-    Object.keys(item).forEach(key => {
-      if (key.includes('FundingRate') && key !== 'nextFundingRate') {
-        const rate = item[key];
-        if (rate !== undefined && rate !== null && rate !== '-') {
-          const parsedRate = parseFloat(rate);
-          if (!isNaN(parsedRate)) {
-            rates.push(parsedRate);
+      // Додаємо інформацію про ціну, якщо вона є
+      if (item.index_price) {
+        resultItem.indexPrice = item.index_price;
+      }
+      
+      // Обчислюємо середню ставку фандингу для сортування і фільтрації
+      const rates = [];
+      
+      for (const key in exchangeRates) {
+        if (!key.includes('NextFundingTime') && 
+            !key.includes('Interval') && 
+            !key.includes('Coin')) {
+          const rate = exchangeRates[key];
+          if (rate !== undefined && rate !== null && rate !== '-') {
+            rates.push(parseFloat(rate));
           }
         }
       }
+      
+      const fundingRate = rates.length > 0 
+        ? rates.reduce((acc, rate) => acc + rate, 0) / rates.length 
+        : 0;
+      
+      // Об'єднуємо всі дані
+      return {
+        ...resultItem,
+        ...exchangeRates,
+        fundingRate
+      };
     });
     
-    if (rates.length === 0) return 0;
+    logger.debug('Завершено форматування даних фандингу', { 
+      resultLength: result.length 
+    });
     
-    const sum = rates.reduce((acc, rate) => acc + rate, 0);
-    return sum / rates.length;
+    return result;
   } catch (error) {
-    console.error('Помилка обчислення середнього фандингу:', error);
-    return 0; // Повертаємо 0 у випадку помилки
+    logger.error('Помилка під час форматування даних фандингу', error);
+    throw new Error(`Помилка форматування даних: ${error.message}`);
   }
+};
+
+export default {
+  fetchFundingRates,
+  fetchCoinsMarkets,
+  fetchHistoricalFunding
 };
