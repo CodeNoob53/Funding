@@ -34,11 +34,11 @@ function TokenItem({ token, exchanges, marginType, onClick, onRateClick }) {
   return (
     <tr
       onClick={() => onClick(token)}
-      className="hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+      className="hover:bg-[rgb(var(--foreground))/5] cursor-pointer transition-colors"
     >
-      <td className="py-4 px-6 text-left font-semibold text-sm text-gray-900 dark:text-white">
+      <td className="py-4 px-6 text-left font-semibold text-sm text-[rgb(var(--foreground))]">
         <div className="flex items-center gap-3">
-          <CryptoIcon symbol={token.symbol} size={24} />
+          <CryptoIcon symbol={token.symbol} size={4} />
           <span>{token.symbol}</span>
         </div>
       </td>
@@ -68,19 +68,19 @@ function TokenItem({ token, exchanges, marginType, onClick, onRateClick }) {
               <div className="flex flex-col items-center gap-1">
                 <span
                   className={`font-semibold ${
-                    isPositive ? 'text-green-500' : isNegative ? 'text-red-500' : 'text-gray-700 dark:text-gray-300'
+                    isPositive ? 'text-green-500' : isNegative ? 'text-red-500' : 'text-[rgb(var(--foreground))/70]'
                   }`}
                 >
                   {formatRate(rate)}
                 </span>
                 {(interval || nextIn) && (
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                  <span className="text-xs text-[rgb(var(--foreground))/50]">
                     {interval ? `${interval}г` : ''}{interval && nextIn ? ' • ' : ''}{nextIn}
                   </span>
                 )}
               </div>
             ) : (
-              <span className="text-gray-400 dark:text-gray-500">—</span>
+              <span className="text-[rgb(var(--foreground))/30]">—</span>
             )}
           </td>
         );

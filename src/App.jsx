@@ -26,26 +26,6 @@ function App() {
       platform: navigator.platform,
       screenSize: `${window.innerWidth}x${window.innerHeight}`
     });
-
-    if (!import.meta.env.VITE_API_KEY) {
-      logger.warn('API ключ не знайдено в змінних середовища');
-    }
-
-    const handleGlobalError = (event) => {
-      logger.error('Незловлена глобальна помилка:', {
-        message: event.message,
-        source: event.filename,
-        lineno: event.lineno,
-        colno: event.colno,
-        error: event.error
-      });
-    };
-
-    window.addEventListener('error', handleGlobalError);
-    return () => {
-      window.removeEventListener('error', handleGlobalError);
-      logger.info('Додаток вивантажено');
-    };
   }, []);
 
   useEffect(() => {
@@ -62,20 +42,12 @@ function App() {
         setFundingData(data);
         const now = new Date();
         setLastUpdated(now);
-        logger.info(`Дані про фандинг успішно завантажено (${data.length} записів)`, {
-          timestamp: now.toISOString(),
-          tokenCount: data.length,
-          topTokens: data.slice(0, 3).map(token => token.symbol)
-        });
+        logger.info(`Дані про фандинг успішно завантажено (${data.length} записів)`);
         setError(null);
       } catch (err) {
         const errorMessage = 'Не вдалося завантажити дані про фандинг';
         setError(errorMessage);
-        logger.error(errorMessage, {
-          originalError: err.message,
-          stack: err.stack,
-          time: new Date().toISOString()
-        });
+        logger.error(errorMessage, err);
       } finally {
         setIsLoading(false);
       }
@@ -95,29 +67,17 @@ function App() {
 
   const handleSelectToken = (token) => {
     setSelectedToken(token);
-    logger.debug(`Вибрано токен: ${token.symbol}`, {
-      tokenSymbol: token.symbol,
-      fundingRate: token.fundingRate,
-      exchanges: Object.keys(token).filter(key =>
-        !key.includes('NextFundingTime') &&
-        key !== 'symbol' &&
-        key !== 'indexPrice' &&
-        key !== 'fundingRate'
-      )
-    });
+    logger.debug(`Вибрано токен: ${token.symbol}`);
   };
 
-  const handleSelectRate = (token, exchange, rate) => {
-    logger.debug(`Вибрано ставку: ${token.symbol} на ${exchange} (${rate})`, {
-      tokenSymbol: token.symbol,
-      exchange,
-      rate
-    });
+  const handleSelectRate = (data) => {
+    const { token, exchange, funding_rate } = data;
+    logger.debug(`Вибрано ставку: ${token.symbol} на ${exchange} (${funding_rate})`);
 
     const updatedToken = {
       ...token,
       selectedExchange: exchange,
-      selectedRate: rate
+      selectedRate: funding_rate
     };
 
     setSelectedToken(updatedToken);
@@ -152,7 +112,6 @@ function App() {
         <div className="mt-8">
           <CalculatorSection
             selectedToken={selectedToken}
-            onSelectRate={handleSelectRate}
           />
         </div>
       </main>

@@ -28,7 +28,6 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
         displayName: exchange,
       }));
       setAvailableExchanges(formatted);
-      console.log('availableExchanges:', formatted);
     } else {
       setAvailableExchanges([]);
     }
@@ -40,21 +39,17 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
     const hasMarginList = Array.isArray(
       activeTab === 'stablecoin' ? token.stablecoin_margin_list : token.token_margin_list
     );
-    console.log(`Token ${token.symbol}: matchesSearch=${matchesSearch}, hasMarginList=${hasMarginList}`); // Діагностика
     return matchesSearch && hasMarginList;
   });
 
-  console.log('fundingData:', fundingData);
-  console.log('filteredTokens:', filteredTokens);
-
   return (
-    <section className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+    <section className="bg-[rgb(var(--card))] rounded-xl shadow-lg overflow-hidden">
       {/* Заголовок і пошук */}
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+      <div className="p-6 border-b border-[rgb(var(--border))] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h2 className="text-2xl font-bold text-[rgb(var(--foreground))] flex items-center gap-3">
           Ставки фінансування
           {isLoading && (
-            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-[rgb(var(--primary))] border-t-transparent rounded-full animate-spin" />
           )}
         </h2>
         <input
@@ -62,19 +57,19 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
           placeholder="Пошук токена..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full sm:w-64 py-2 px-4 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+          className="w-full sm:w-64 py-2 px-4 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--background))] text-[rgb(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary))/50] transition"
         />
       </div>
 
       {/* Вкладки */}
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="px-6 py-4 border-b border-[rgb(var(--border))]">
         <div className="flex space-x-4">
           <button
             onClick={() => setActiveTab('stablecoin')}
             className={`py-2 px-4 rounded-lg font-semibold transition-colors ${
               activeTab === 'stablecoin'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                ? 'bg-[rgb(var(--primary))] text-[rgb(var(--primary-foreground))]'
+                : 'bg-[rgb(var(--foreground))/5] text-[rgb(var(--foreground))/70] hover:bg-[rgb(var(--foreground))/10]'
             }`}
           >
             Stablecoin Margin
@@ -83,8 +78,8 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
             onClick={() => setActiveTab('token')}
             className={`py-2 px-4 rounded-lg font-semibold transition-colors ${
               activeTab === 'token'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                ? 'bg-[rgb(var(--primary))] text-[rgb(var(--primary-foreground))]'
+                : 'bg-[rgb(var(--foreground))/5] text-[rgb(var(--foreground))/70] hover:bg-[rgb(var(--foreground))/10]'
             }`}
           >
             Token Margin
@@ -100,22 +95,22 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
           </div>
         </div>
       ) : filteredTokens.length === 0 && !isLoading ? (
-        <div className="p-6 text-center text-gray-500 dark:text-gray-400">
+        <div className="p-6 text-center text-[rgb(var(--foreground))/50]">
           Немає даних для відображення. Перевірте вкладку або пошуковий запит.
         </div>
       ) : (
         <div className="max-h-[70vh] overflow-x-auto overflow-y-auto">
           <table className="w-full min-w-max table-fixed">
             <thead>
-              <tr className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-                <th className="py-4 px-6 text-left font-semibold text-gray-700 dark:text-gray-200 w-40">
+              <tr className="sticky top-0 z-10 bg-[rgb(var(--card))/90] backdrop-blur-sm border-b border-[rgb(var(--border))]">
+                <th className="py-4 px-6 text-left font-semibold text-[rgb(var(--foreground))/70] w-40">
                   Монета
                 </th>
                 {availableExchanges.length > 0 ? (
                   availableExchanges.map((ex) => (
                     <th
                       key={ex.key}
-                      className="py-4 px-6 text-center font-semibold text-gray-700 dark:text-gray-200"
+                      className="py-4 px-6 text-center font-semibold text-[rgb(var(--foreground))/70]"
                     >
                       <div className="flex items-center justify-center gap-2">
                         <ExchangeIcon exchange={ex.displayName} size={20} />
@@ -124,20 +119,20 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
                     </th>
                   ))
                 ) : (
-                  <th className="py-4 px-6 text-center font-semibold text-gray-700 dark:text-gray-200">
+                  <th className="py-4 px-6 text-center font-semibold text-[rgb(var(--foreground))/70]">
                     Немає доступних бірж
                   </th>
                 )}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
+            <tbody className="divide-y divide-[rgb(var(--border))]">
               {filteredTokens.map((token) => (
                 <TokenItem
                   key={`${token.symbol}-${activeTab}`}
                   token={token}
                   exchanges={availableExchanges.map((e) => e.key)}
                   marginType={activeTab}
-                  onClick={onSelectToken}
+                  onClick={() => onSelectToken(token)}
                   onRateClick={onSelectRate}
                 />
               ))}
@@ -145,7 +140,7 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
                 <tr>
                   <td
                     colSpan={availableExchanges.length + 1 || 2}
-                    className="text-center py-12 text-gray-500 dark:text-gray-400"
+                    className="text-center py-12 text-[rgb(var(--foreground))/50]"
                   >
                     Нічого не знайдено
                   </td>

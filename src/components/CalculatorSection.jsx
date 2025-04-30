@@ -72,9 +72,7 @@ function CalculatorSection({ selectedToken }) {
 
   useEffect(() => {
     if (selectedToken) {
-      console.log("Token selected:", selectedToken);
       const bestExchange = getBestExchange(selectedToken);
-      console.log("Best exchange:", bestExchange);
       
       setSelectedExchange(bestExchange.exchange);
       
@@ -137,9 +135,9 @@ function CalculatorSection({ selectedToken }) {
   };
 
   return (
-    <div className="card animate-fade min-w-[340px]">
+    <section className="card">
       <div className="p-6 border-b border-[rgb(var(--border))]">
-        <h2 className="text-xl font-semibold">Простий калькулятор</h2>
+        <h2 className="text-xl font-semibold">Калькулятор позиції</h2>
       </div>
       
       {selectedExchange && (
@@ -154,7 +152,7 @@ function CalculatorSection({ selectedToken }) {
         </div>
       )}
       
-      <div className="p-6 space-y-6">
+      <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <CalculatorForm 
           formValues={formValues}
           positionType={positionType}
@@ -163,13 +161,9 @@ function CalculatorSection({ selectedToken }) {
           onSubmit={handleCalculate}
         />
         
-        {calculationData && (
-          <div className="pt-6 border-t border-[rgb(var(--border))]">
-            <CalculationResults data={calculationData} />
-          </div>
-        )}
+        <CalculationResults data={calculationData} />
       </div>
-    </div>
+    </section>
   );
 }
 
