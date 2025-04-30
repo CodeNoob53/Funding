@@ -1,37 +1,31 @@
 import axios from 'axios';
 import logger from './logger';
 
-// Базовий URL API v4
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://open-api-v4.coinglass.com";
-const API_KEY = import.meta.env.VITE_API_KEY || "";
+// Визначаємо API URL залежно від середовища
+const isProduction = import.meta.env.PROD;
+const isLocalDev = import.meta.env.DEV;
 
-// Налаштування логування запитів і відповідей
-const IS_DEBUG = import.meta.env.VITE_DEBUG === 'true' || false;
+// Для продакшн використовуємо локальний проксі
+const API_URL = isProduction 
+  ? '/api/proxy' 
+  : isLocalDev 
+    ? 'http://localhost:3001/api/proxy'
+    : '/api/proxy';
 
 // Ендпоінти API
 const ENDPOINTS = {
   // Поточні ставки фандингу по біржах
-  FUNDING_RATES: "/api/futures/funding-rate/exchange-list",
+  FUNDING_RATES: "/funding-rates",
   
-  // Ринкові дані для ф'ючерсних монет (ціна, ліквідність, об'єм торгів)
-  COINS_MARKETS: "/api/futures/coins-markets",
+  // Ринкові дані для ф'ючерсних монет
+  COINS_MARKETS: "/coins-markets",
   
-  // Історичні дані фандингу (якщо потрібно в майбутньому)
-  HISTORICAL_FUNDING: "/api/futures/funding-rate/chart",
+  // Історичні дані фандингу
+  HISTORICAL_FUNDING: "/historical-funding",
 };
 
-/**
- * Функція для створення конфігурації запитів
- * @returns {Object} Конфігурація для axios
- */
-const createRequestConfig = () => {
-  return {
-    headers: {
-      'accept': 'application/json',
-      'CG-API-KEY': API_KEY
-    }
-  };
-};
+// Налаштування логування запитів і відповідей
+const IS_DEBUG = import.meta.env.VITE_DEBUG === 'true' || false;
 
 /**
  * Отримання поточних ставок фандингу по всіх біржах
@@ -39,19 +33,13 @@ const createRequestConfig = () => {
  */
 export const fetchFundingRates = async () => {
   const endpoint = ENDPOINTS.FUNDING_RATES;
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `${API_URL}${endpoint}`;
   
   try {
-    if (!API_KEY) {
-      const error = new Error('API-ключ не надано');
-      logger.error('Відсутній API-ключ для CoinGlass', error);
-      throw error;
-    }
-    
     logger.debug(`Запит фандинг ставок з ${url}`);
     const startTime = performance.now();
     
-    const response = await axios.get(url, createRequestConfig());
+    const response = await axios.get(url);
     
     const endTime = performance.now();
     logger.debug(`Відповідь отримана за ${(endTime - startTime).toFixed(2)}ms`);
@@ -81,25 +69,19 @@ export const fetchFundingRates = async () => {
 };
 
 /**
- * Отримання ринкових даних для монет (ціна, ліквідність, об'єм)
+ * Отримання ринкових даних для монет
  * @param {string} symbol - Символ криптовалюти (опціонально)
  * @returns {Promise<Array>} Масив об'єктів з ринковими даними
  */
 export const fetchCoinsMarkets = async (symbol = '') => {
-  const endpoint = ENDPOINTS.COINS_MARKETS + (symbol ? `?symbol=${symbol}` : '');
-  const url = `${API_BASE_URL}${endpoint}`;
+  const endpoint = `${ENDPOINTS.COINS_MARKETS}${symbol ? `?symbol=${symbol}` : ''}`;
+  const url = `${API_URL}${endpoint}`;
   
   try {
-    if (!API_KEY) {
-      const error = new Error('API-ключ не надано');
-      logger.error('Відсутній API-ключ для CoinGlass', error);
-      throw error;
-    }
-    
     logger.debug(`Запит ринкових даних з ${url}`);
     const startTime = performance.now();
     
-    const response = await axios.get(url, createRequestConfig());
+    const response = await axios.get(url);
     
     const endTime = performance.now();
     logger.debug(`Відповідь отримана за ${(endTime - startTime).toFixed(2)}ms`);
@@ -136,19 +118,13 @@ export const fetchCoinsMarkets = async (symbol = '') => {
 export const fetchHistoricalFunding = async (symbol, exchange, days = 7) => {
   const params = { symbol, exchange, days };
   const endpoint = `${ENDPOINTS.HISTORICAL_FUNDING}?symbol=${symbol}&exchange=${exchange}&days=${days}`;
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `${API_URL}${endpoint}`;
   
   try {
-    if (!API_KEY) {
-      const error = new Error('API-ключ не надано');
-      logger.error('Відсутній API-ключ для CoinGlass', error);
-      throw error;
-    }
-    
     logger.debug(`Запит історичних даних фандингу з ${url}`, params);
     const startTime = performance.now();
     
-    const response = await axios.get(url, createRequestConfig());
+    const response = await axios.get(url);
     
     const endTime = performance.now();
     logger.debug(`Відповідь отримана за ${(endTime - startTime).toFixed(2)}ms`);
@@ -180,78 +156,61 @@ const formatFundingData = (data) => {
     });
     
     const result = data.map(item => {
-      // Базова інформація про символ
-      const resultItem = {
-        symbol: item.symbol,
-      };
-      
-      // Збираємо всі ставки фандингу з різних бірж
-      const exchangeRates = {};
-      
-      // Додаємо ставки з stablecoin_margin_list (USDT/USD)
-      if (item.stablecoin_margin_list && item.stablecoin_margin_list.length > 0) {
+      // Збираємо списки для stablecoin і token margin
+      const stablecoinMarginList = [];
+      const tokenMarginList = [];
+
+      // Обробка stablecoin_margin_list
+      if (Array.isArray(item.stablecoin_margin_list)) {
         item.stablecoin_margin_list.forEach(exchange => {
-          const exchangeName = exchange.exchange.toLowerCase();
-          exchangeRates[exchangeName] = exchange.funding_rate;
-          
-          // Додаємо наступний час фандингу
-          if (exchange.next_funding_time) {
-            exchangeRates[`${exchangeName}NextFundingTime`] = exchange.next_funding_time;
-          }
-          
-          // Додаємо інформацію про інтервал фандингу (в годинах)
-          if (exchange.funding_rate_interval) {
-            exchangeRates[`${exchangeName}Interval`] = exchange.funding_rate_interval;
+          if (exchange.exchange) {
+            stablecoinMarginList.push({
+              exchange: exchange.exchange,
+              funding_rate: parseFloat(exchange.funding_rate) || 0,
+              funding_rate_interval: exchange.funding_rate_interval || 8,
+              next_funding_time: exchange.next_funding_time || null,
+            });
           }
         });
       }
-      
-      // Додаємо ставки з token_margin_list (coin-margined)
-      if (item.token_margin_list && item.token_margin_list.length > 0) {
+
+      // Обробка token_margin_list
+      if (Array.isArray(item.token_margin_list)) {
         item.token_margin_list.forEach(exchange => {
-          const exchangeName = exchange.exchange.toLowerCase();
-          // Для розрізнення coin-margined додаємо суфікс
-          exchangeRates[`${exchangeName}Coin`] = exchange.funding_rate;
-          
-          if (exchange.next_funding_time) {
-            exchangeRates[`${exchangeName}CoinNextFundingTime`] = exchange.next_funding_time;
+          if (exchange.exchange) {
+            tokenMarginList.push({
+              exchange: exchange.exchange,
+              funding_rate: parseFloat(exchange.funding_rate) || 0,
+              funding_rate_interval: exchange.funding_rate_interval || 8,
+              next_funding_time: exchange.next_funding_time || null,
+            });
           }
         });
       }
-      
-      // Додаємо інформацію про ціну, якщо вона є
-      if (item.index_price) {
-        resultItem.indexPrice = item.index_price;
-      }
-      
+
       // Обчислюємо середню ставку фандингу для сортування і фільтрації
-      const rates = [];
-      
-      for (const key in exchangeRates) {
-        if (!key.includes('NextFundingTime') && 
-            !key.includes('Interval') && 
-            !key.includes('Coin')) {
-          const rate = exchangeRates[key];
-          if (rate !== undefined && rate !== null && rate !== '-') {
-            rates.push(parseFloat(rate));
-          }
-        }
-      }
-      
+      const rates = [
+        ...stablecoinMarginList.map(entry => entry.funding_rate),
+        ...tokenMarginList.map(entry => entry.funding_rate),
+      ].filter(rate => rate !== undefined && rate !== null && !isNaN(rate));
+
       const fundingRate = rates.length > 0 
         ? rates.reduce((acc, rate) => acc + rate, 0) / rates.length 
         : 0;
-      
-      // Об'єднуємо всі дані
+
+      // Повертаємо об'єкт у форматі, сумісному з FundingSection
       return {
-        ...resultItem,
-        ...exchangeRates,
-        fundingRate
+        symbol: item.symbol || 'UNKNOWN',
+        stablecoin_margin_list: stablecoinMarginList,
+        token_margin_list: tokenMarginList,
+        indexPrice: item.index_price || null,
+        fundingRate,
       };
     });
     
     logger.debug('Завершено форматування даних фандингу', { 
-      resultLength: result.length 
+      resultLength: result.length,
+      sample: result.length > 0 ? result[0] : null
     });
     
     return result;

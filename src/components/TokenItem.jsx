@@ -1,106 +1,87 @@
 import PropTypes from 'prop-types';
 import CryptoIcon from './CryptoIcon';
 
-function TokenItem({ token, exchanges, onClick, onRateClick }) {
-  // Функція для форматування та відображення ставки фандингу
-  const formatRate = (rate, exchange) => {
-    if (rate === undefined || rate === null || rate === '-') return '-';
-    
-    const value = (parseFloat(rate) * 100).toFixed(4);
-    const isPositive = parseFloat(value) > 0;
-    const isHighValue = Math.abs(parseFloat(value)) >= 0.15;
-    
-    return (
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onRateClick(token, exchange, rate);
-        }}
-        className={`
-          px-2 py-1 rounded-md transition-colors duration-200 w-full
-          ${isPositive ? 'text-green-500 hover:bg-green-500/10' : 'text-red-500 hover:bg-red-500/10'} 
-          ${isHighValue ? 'font-bold' : ''}
-          hover:shadow-sm
-        `}
-        title={`Використати ${exchange} фандинг для калькулятора`}
-      >
-        <span>{value}%</span>
-      </button>
-    );
+function TokenItem({ token, exchanges, marginType, onClick, onRateClick }) {
+  const formatRate = (rate) => {
+    if (rate === undefined || rate === null || isNaN(rate)) return '—';
+    return `${(parseFloat(rate) * 100).toFixed(3)}%`;
   };
 
-  // Функція для обчислення річної прибутковості (APR) на основі ставки фандингу
-  const calculateApr = (rate) => {
-    if (rate === undefined || rate === null || rate === '-') return null;
-    const annualizedRate = parseFloat(rate) * 3 * 365; // 3 рази на день, 365 днів
-    return (annualizedRate * 100).toFixed(2);
+  const formatHoursFromNow = (timestamp) => {
+    if (!timestamp) return '';
+    const diffMs = timestamp - Date.now();
+    const diffHours = diffMs / (1000 * 60 * 60);
+    return diffHours > 0 ? `${diffHours.toFixed(1)}г` : '';
   };
 
-  const apr = calculateApr(token.fundingRate);
+  // Отримуємо список даних залежно від marginType
+  const marginList = marginType === 'stablecoin' ? token.stablecoin_margin_list : token.token_margin_list;
 
-  // Функція для отримання наступного часу фандингу (якщо є)
-  const getNextFundingTime = (exchangeName) => {
-    const nextFundingKey = `${exchangeName}NextFundingTime`;
-    return token[nextFundingKey];
-  };
-
-  // Функція для отримання значення фандингу для конкретної біржі
-  const getExchangeFunding = (exchangeName) => {
-    // Використовуємо ключ біржі безпосередньо, оскільки він вже у нижньому регістрі
-    return token[exchangeName];
-  };
-
-  // Функція для форматування часу
-  const formatTime = (timestamp) => {
-    if (!timestamp) return null;
-    
-    try {
-      const date = new Date(parseInt(timestamp));
-      const hours = date.getHours().toString().padStart(2, '0');
-      const minutes = date.getMinutes().toString().padStart(2, '0');
-      return `${hours}:${minutes}`;
-    } catch (e) {
-      console.error('Error formatting time:', e);
-      return null;
-    }
-  };
+  // Створюємо мапу бірж для швидкого доступу до даних
+  const exchangeData = Array.isArray(marginList)
+    ? marginList.reduce((acc, entry) => {
+        if (entry.exchange) {
+          acc[entry.exchange.toLowerCase()] = {
+            funding_rate: entry.funding_rate,
+            funding_rate_interval: entry.funding_rate_interval,
+            next_funding_time: entry.next_funding_time,
+          };
+        }
+        return acc;
+      }, {})
+    : {};
 
   return (
-    <tr 
-      className="table-row-hover transition-all duration-200 hover:shadow-md hover:bg-[rgb(var(--foreground))/5]"
+    <tr
       onClick={() => onClick(token)}
+      className="hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
     >
-      <td className="table-cell font-medium py-4 px-4 sm:px-6">
+      <td className="py-4 px-6 text-left font-semibold text-sm text-gray-900 dark:text-white">
         <div className="flex items-center gap-3">
-          <CryptoIcon symbol={token.symbol} size={6} />
-          <div className="flex flex-col">
-            <div className="text-sm sm:text-base font-medium">{token.symbol}</div>
-            {apr && (
-              <div className="text-xs opacity-60">
-                APR: {apr}%
-              </div>
-            )}
-          </div>
+          <CryptoIcon symbol={token.symbol} size={24} />
+          <span>{token.symbol}</span>
         </div>
       </td>
-      
-      {/* Динамічно відображаємо стовпці для всіх бірж */}
-      {exchanges.map(exchange => {
-        const fundingRate = getExchangeFunding(exchange);
-        const nextFundingTime = getNextFundingTime(exchange);
-        const formattedTime = formatTime(nextFundingTime);
-        
+
+      {exchanges.map((exchange) => {
+        const data = exchangeData[exchange];
+        const rate = data?.funding_rate;
+        const interval = data?.funding_rate_interval;
+        const nextTime = data?.next_funding_time;
+        const nextIn = formatHoursFromNow(nextTime);
+
+        const isPositive = rate > 0;
+        const isNegative = rate < 0;
+
         return (
-          <td key={exchange} className="table-cell text-right py-4 px-4 sm:px-6">
-            <div className="flex flex-col items-end gap-1">
-              {formatRate(fundingRate, exchange)}
-              
-              {formattedTime && (
-                <div className="text-xs opacity-50">
-                  {formattedTime}
-                </div>
-              )}
-            </div>
+          <td
+            key={exchange}
+            className="text-center text-sm py-4 px-6"
+            onClick={(e) => {
+              e.stopPropagation(); // Запобігаємо виклику onClick(token)
+              if (data) {
+                onRateClick({ token, exchange, ...data });
+              }
+            }}
+          >
+            {rate !== undefined && rate !== null ? (
+              <div className="flex flex-col items-center gap-1">
+                <span
+                  className={`font-semibold ${
+                    isPositive ? 'text-green-500' : isNegative ? 'text-red-500' : 'text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  {formatRate(rate)}
+                </span>
+                {(interval || nextIn) && (
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {interval ? `${interval}г` : ''}{interval && nextIn ? ' • ' : ''}{nextIn}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <span className="text-gray-400 dark:text-gray-500">—</span>
+            )}
           </td>
         );
       })}
@@ -111,10 +92,11 @@ function TokenItem({ token, exchanges, onClick, onRateClick }) {
 TokenItem.propTypes = {
   token: PropTypes.shape({
     symbol: PropTypes.string.isRequired,
-    fundingRate: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
-    // Динамічні властивості для бірж не описуємо в PropTypes
+    stablecoin_margin_list: PropTypes.arrayOf(PropTypes.object),
+    token_margin_list: PropTypes.arrayOf(PropTypes.object),
   }).isRequired,
   exchanges: PropTypes.arrayOf(PropTypes.string).isRequired,
+  marginType: PropTypes.oneOf(['stablecoin', 'token']).isRequired,
   onClick: PropTypes.func.isRequired,
   onRateClick: PropTypes.func.isRequired,
 };

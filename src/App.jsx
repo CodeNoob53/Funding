@@ -7,7 +7,6 @@ import { fetchFundingRates } from './services/api';
 import useThemeStore from './store/themeStore';
 import logger from './services/logger';
 
-// Версія додатку для відстеження у логах
 const APP_VERSION = import.meta.env.VITE_APP_VERSION || '0.2.0';
 
 function App() {
@@ -18,7 +17,6 @@ function App() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const theme = useThemeStore((state) => state.theme);
 
-  // Логування при ініціалізації додатку
   useEffect(() => {
     logger.info(`Фандинг Калькулятор v${APP_VERSION} запущено`, {
       environment: import.meta.env.MODE,
@@ -28,13 +26,11 @@ function App() {
       platform: navigator.platform,
       screenSize: `${window.innerWidth}x${window.innerHeight}`
     });
-    
-    // Перевіряємо наявність API ключа
+
     if (!import.meta.env.VITE_API_KEY) {
       logger.warn('API ключ не знайдено в змінних середовища');
     }
-    
-    // Прослуховуємо глобальні помилки
+
     const handleGlobalError = (event) => {
       logger.error('Незловлена глобальна помилка:', {
         message: event.message,
@@ -44,9 +40,8 @@ function App() {
         error: event.error
       });
     };
-    
+
     window.addEventListener('error', handleGlobalError);
-    
     return () => {
       window.removeEventListener('error', handleGlobalError);
       logger.info('Додаток вивантажено');
@@ -63,24 +58,19 @@ function App() {
       try {
         setIsLoading(true);
         logger.info('Початок завантаження даних про фандинг');
-        
         const data = await fetchFundingRates();
         setFundingData(data);
-        
         const now = new Date();
         setLastUpdated(now);
-        
         logger.info(`Дані про фандинг успішно завантажено (${data.length} записів)`, {
           timestamp: now.toISOString(),
           tokenCount: data.length,
           topTokens: data.slice(0, 3).map(token => token.symbol)
         });
-        
         setError(null);
       } catch (err) {
         const errorMessage = 'Не вдалося завантажити дані про фандинг';
         setError(errorMessage);
-        
         logger.error(errorMessage, {
           originalError: err.message,
           stack: err.stack,
@@ -92,13 +82,11 @@ function App() {
     };
 
     loadFundingData();
-    
-    // Налаштовуємо інтервал оновлення даних (15 хвилин)
     const intervalId = setInterval(() => {
       logger.debug('Запуск періодичного оновлення даних фандингу');
       loadFundingData();
     }, 15 * 60 * 1000);
-    
+
     return () => {
       logger.debug('Очищення інтервалу оновлення даних');
       clearInterval(intervalId);
@@ -110,10 +98,10 @@ function App() {
     logger.debug(`Вибрано токен: ${token.symbol}`, {
       tokenSymbol: token.symbol,
       fundingRate: token.fundingRate,
-      exchanges: Object.keys(token).filter(key => 
-        !key.includes('NextFundingTime') && 
-        key !== 'symbol' && 
-        key !== 'indexPrice' && 
+      exchanges: Object.keys(token).filter(key =>
+        !key.includes('NextFundingTime') &&
+        key !== 'symbol' &&
+        key !== 'indexPrice' &&
         key !== 'fundingRate'
       )
     });
@@ -126,7 +114,6 @@ function App() {
       rate
     });
 
-    // Оновлюємо вибраний токен із додатковими параметрами
     const updatedToken = {
       ...token,
       selectedExchange: exchange,
@@ -138,7 +125,6 @@ function App() {
 
   const formatUpdateTime = (date) => {
     if (!date) return '';
-
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
     return `${hours}:${minutes}`;
@@ -155,23 +141,19 @@ function App() {
           </div>
         )}
 
-        <div className="flex flex-col lg:flex-row gap-6">
-          <div className="lg:w-3/5">
-            <FundingSection
-              fundingData={fundingData}
-              isLoading={isLoading}
-              error={error}
-              onSelectToken={handleSelectToken}
-              onSelectRate={handleSelectRate}
-            />
-          </div>
+        <FundingSection
+          fundingData={fundingData}
+          isLoading={isLoading}
+          error={error}
+          onSelectToken={handleSelectToken}
+          onSelectRate={handleSelectRate}
+        />
 
-          <div className="lg:w-2/5 lg:self-start lg:top-24 lg:self-start">
-            <CalculatorSection
-              selectedToken={selectedToken}
-              onSelectRate={handleSelectRate}
-            />
-          </div>
+        <div className="mt-8">
+          <CalculatorSection
+            selectedToken={selectedToken}
+            onSelectRate={handleSelectRate}
+          />
         </div>
       </main>
 
