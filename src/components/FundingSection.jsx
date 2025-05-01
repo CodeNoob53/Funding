@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import TokenItem from './TokenItem';
 import ExchangeIcon from './ExchangeIcon';
@@ -6,41 +6,77 @@ import ExchangeIcon from './ExchangeIcon';
 function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelectRate }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('stablecoin'); // Вкладки: stablecoin або token
-  const [availableExchanges, setAvailableExchanges] = useState([]);
+  const [visibleCount, setVisibleCount] = useState(50); // Кількість видимих рядків
 
-  // Обробка доступних бірж на основі даних
-  useEffect(() => {
-    if (fundingData?.length > 0) {
-      const exchanges = new Set();
-      fundingData.forEach((item) => {
-        const list = activeTab === 'stablecoin' ? item.stablecoin_margin_list : item.token_margin_list;
-        if (Array.isArray(list) && list.length > 0) {
-          list.forEach((entry) => {
-            if (entry.exchange) {
-              exchanges.add(entry.exchange);
+  // Функція для пошуку URL логотипу біржі
+
+  // Оптимізація за допомогою useMemo для обчислення доступних бірж
+  const availableExchanges = useMemo(() => {
+    if (!fundingData?.length) return [];
+    
+    const exchanges = new Set();
+    const logoMap = new Map(); // Зберігаємо відповідність між назвою біржі та логотипом
+    
+    fundingData.forEach((item) => {
+      const list = activeTab === 'stablecoin' ? item.stablecoin_margin_list : item.token_margin_list;
+      if (Array.isArray(list) && list.length > 0) {
+        list.forEach((entry) => {
+          if (entry.exchange) {
+            exchanges.add(entry.exchange);
+            
+            // Зберігаємо логотип, якщо він доступний
+            if (entry.exchange_logo && !logoMap.has(entry.exchange)) {
+              logoMap.set(entry.exchange, entry.exchange_logo);
             }
-          });
-        }
-      });
+          }
+        });
+      }
+    });
 
-      const formatted = Array.from(exchanges).map((exchange) => ({
-        key: exchange.toLowerCase(),
-        displayName: exchange,
-      }));
-      setAvailableExchanges(formatted);
-    } else {
-      setAvailableExchanges([]);
-    }
+    return Array.from(exchanges).map((exchange) => ({
+      key: exchange.toLowerCase(),
+      displayName: exchange,
+      logoUrl: logoMap.get(exchange) || null
+    }));
   }, [fundingData, activeTab]);
 
-  // Фільтрація токенів за пошуковим запитом і наявністю відповідного списку
-  const filteredTokens = fundingData.filter((token) => {
-    const matchesSearch = token.symbol?.toLowerCase().includes(searchQuery.toLowerCase()) || !searchQuery;
-    const hasMarginList = Array.isArray(
-      activeTab === 'stablecoin' ? token.stablecoin_margin_list : token.token_margin_list
-    );
-    return matchesSearch && hasMarginList;
-  });
+  // Оптимізація за допомогою useMemo для фільтрації та сортування токенів
+  const filteredTokens = useMemo(() => {
+    if (!fundingData?.length) return [];
+    
+    const filtered = fundingData.filter((token) => {
+      const matchesSearch = token.symbol?.toLowerCase().includes(searchQuery.toLowerCase()) || !searchQuery;
+      const hasMarginList = Array.isArray(
+        activeTab === 'stablecoin' ? token.stablecoin_margin_list : token.token_margin_list
+      ) && (activeTab === 'stablecoin' ? token.stablecoin_margin_list : token.token_margin_list).length > 0;
+      return matchesSearch && hasMarginList;
+    });
+    
+    // Сортуємо за абсолютною величиною fundingRate від більшого до меншого
+    return filtered.sort((a, b) => Math.abs(b.fundingRate || 0) - Math.abs(a.fundingRate || 0));
+  }, [fundingData, searchQuery, activeTab]);
+
+  // Завантаження більше рядків при прокрутці
+  const handleScroll = useCallback((e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    if (scrollHeight - scrollTop <= clientHeight * 1.5 && visibleCount < filteredTokens.length) {
+      setVisibleCount(prev => Math.min(prev + 20, filteredTokens.length));
+    }
+  }, [filteredTokens.length, visibleCount]);
+
+  // Скидаємо лічильник видимих рядків при зміні фільтра або вкладки
+  useEffect(() => {
+    setVisibleCount(50);
+  }, [searchQuery, activeTab]);
+
+  // Оптимізація обробників подій з useCallback
+  const handleTokenClick = useCallback((token) => {
+    onSelectToken(token);
+  }, [onSelectToken]);
+
+  const handleRateClick = useCallback((data) => {
+    onSelectRate(data);
+  }, [onSelectRate]);
 
   return (
     <section className="bg-[rgb(var(--card))] rounded-xl shadow-lg overflow-hidden">
@@ -87,6 +123,11 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
         </div>
       </div>
 
+      {/* Інформація про кількість токенів */}
+      <div className="px-6 py-2 text-sm text-[rgb(var(--foreground))/60]">
+        Знайдено токенів: {filteredTokens.length}
+      </div>
+
       {/* Помилка або таблиця */}
       {error ? (
         <div className="p-6">
@@ -99,7 +140,7 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
           Немає даних для відображення. Перевірте вкладку або пошуковий запит.
         </div>
       ) : (
-        <div className="max-h-[70vh] overflow-x-auto overflow-y-auto">
+        <div className="max-h-[70vh] overflow-x-auto overflow-y-auto" onScroll={handleScroll}>
           <table className="w-full min-w-max table-fixed">
             <thead>
               <tr className="sticky top-0 z-10 bg-[rgb(var(--card))/90] backdrop-blur-sm border-b border-[rgb(var(--border))]">
@@ -113,7 +154,11 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
                       className="py-4 px-6 text-center font-semibold text-[rgb(var(--foreground))/70]"
                     >
                       <div className="flex items-center justify-center gap-2">
-                        <ExchangeIcon exchange={ex.displayName} size={20} />
+                        <ExchangeIcon 
+                          exchange={ex.displayName} 
+                          size={20} 
+                          logoUrl={ex.logoUrl}
+                        />
                         <span>{ex.displayName}</span>
                       </div>
                     </th>
@@ -126,14 +171,14 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
               </tr>
             </thead>
             <tbody className="divide-y divide-[rgb(var(--border))]">
-              {filteredTokens.map((token) => (
+              {filteredTokens.slice(0, visibleCount).map((token) => (
                 <TokenItem
                   key={`${token.symbol}-${activeTab}`}
                   token={token}
                   exchanges={availableExchanges.map((e) => e.key)}
                   marginType={activeTab}
-                  onClick={() => onSelectToken(token)}
-                  onRateClick={onSelectRate}
+                  onClick={handleTokenClick}
+                  onRateClick={handleRateClick}
                 />
               ))}
               {!isLoading && filteredTokens.length === 0 && (
@@ -143,6 +188,16 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
                     className="text-center py-12 text-[rgb(var(--foreground))/50]"
                   >
                     Нічого не знайдено
+                  </td>
+                </tr>
+              )}
+              {filteredTokens.length > visibleCount && (
+                <tr>
+                  <td
+                    colSpan={availableExchanges.length + 1}
+                    className="text-center py-4 text-[rgb(var(--foreground))/50] italic"
+                  >
+                    Прокрутіть вниз, щоб завантажити більше...
                   </td>
                 </tr>
               )}
@@ -158,20 +213,29 @@ FundingSection.propTypes = {
   fundingData: PropTypes.arrayOf(
     PropTypes.shape({
       symbol: PropTypes.string.isRequired,
+      symbolLogo: PropTypes.string,
       stablecoin_margin_list: PropTypes.arrayOf(
         PropTypes.shape({
           exchange: PropTypes.string,
+          exchange_logo: PropTypes.string,
           funding_rate: PropTypes.number,
           funding_rate_interval: PropTypes.number,
           next_funding_time: PropTypes.number,
+          predicted_rate: PropTypes.number,
+          price: PropTypes.number,
+          status: PropTypes.number,
         })
       ),
       token_margin_list: PropTypes.arrayOf(
         PropTypes.shape({
           exchange: PropTypes.string,
+          exchange_logo: PropTypes.string,
           funding_rate: PropTypes.number,
           funding_rate_interval: PropTypes.number,
           next_funding_time: PropTypes.number,
+          predicted_rate: PropTypes.number,
+          price: PropTypes.number,
+          status: PropTypes.number,
         })
       ),
     })

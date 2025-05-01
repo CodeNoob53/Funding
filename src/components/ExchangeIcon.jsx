@@ -2,7 +2,20 @@
 import PropTypes from 'prop-types';
 import * as simpleIcons from 'simple-icons/icons';
 
-function ExchangeIcon({ exchange, size = 32, color = 'currentColor' }) {
+function ExchangeIcon({ exchange, size = 32, color = 'currentColor', logoUrl = null }) {
+  // Якщо передана пряма URL-адреса логотипу, використовуємо її
+  if (logoUrl) {
+    return (
+      <img 
+        src={logoUrl} 
+        alt={exchange} 
+        className="rounded-full" 
+        style={{ width: size, height: size }} 
+        title={exchange}
+      />
+    );
+  }
+  
   // Маппінг назв бірж до їх назв у simple-icons
   const exchangeMappings = {
     'Binance': 'Binance',
@@ -78,6 +91,7 @@ ExchangeIcon.propTypes = {
   exchange: PropTypes.string.isRequired,
   size: PropTypes.number,
   color: PropTypes.string,
+  logoUrl: PropTypes.string,
 };
 
 export default ExchangeIcon;

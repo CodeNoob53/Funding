@@ -1,3 +1,4 @@
+// src/services/api.js - оновлюємо імпорти та ендпоінти
 import axios from 'axios';
 import logger from './logger';
 
@@ -14,8 +15,8 @@ const API_URL = isProduction
 
 // Ендпоінти API
 const ENDPOINTS = {
-  // Поточні ставки фандингу по біржах
-  FUNDING_RATES: "/funding-rates",
+  // Нові розширені ставки фандингу
+  FUNDING_RATES_EXTENDED: "/funding-rates-extended",
   
   // Ринкові дані для ф'ючерсних монет
   COINS_MARKETS: "/coins-markets",
@@ -24,19 +25,31 @@ const ENDPOINTS = {
   HISTORICAL_FUNDING: "/historical-funding",
 };
 
-// Налаштування логування запитів і відповідей
-const IS_DEBUG = import.meta.env.VITE_DEBUG === 'true' || false;
+// Кешування даних
+const fundingDataCache = {
+  data: null,
+  timestamp: null,
+  expiryTime: 5 * 60 * 1000 // 5 хвилин в мілісекундах
+};
 
 /**
  * Отримання поточних ставок фандингу по всіх біржах
  * @returns {Promise<Array>} Масив об'єктів з даними про фандинг
  */
 export const fetchFundingRates = async () => {
-  const endpoint = ENDPOINTS.FUNDING_RATES;
+  // Перевіряємо, чи є валідні дані в кеші
+  const now = Date.now();
+  if (fundingDataCache.data && fundingDataCache.timestamp && 
+      (now - fundingDataCache.timestamp < fundingDataCache.expiryTime)) {
+    logger.debug(`Використовуємо кешовані дані фандингу (${fundingDataCache.data.length} записів)`);
+    return fundingDataCache.data;
+  }
+  
+  const endpoint = ENDPOINTS.FUNDING_RATES_EXTENDED;
   const url = `${API_URL}${endpoint}`;
   
   try {
-    logger.debug(`Запит фандинг ставок з ${url}`);
+    logger.debug(`Запит розширених фандинг ставок з ${url}`);
     const startTime = performance.now();
     
     const response = await axios.get(url);
@@ -44,24 +57,62 @@ export const fetchFundingRates = async () => {
     const endTime = performance.now();
     logger.debug(`Відповідь отримана за ${(endTime - startTime).toFixed(2)}ms`);
     
-    if (IS_DEBUG) {
-      logger.debug('Відповідь API:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers,
-        data: response.data
-      });
-    }
+    // Додаємо детальний лог структури відповіді для налагодження
+    logger.debug('Структура відповіді:', {
+      responseType: typeof response.data,
+      isArray: Array.isArray(response.data),
+      topLevelKeys: response.data && typeof response.data === 'object' && !Array.isArray(response.data) 
+        ? Object.keys(response.data) 
+        : null,
+      firstItem: response.data && Array.isArray(response.data) && response.data.length > 0 
+        ? Object.keys(response.data[0]) 
+        : null,
+      sampleData: response.data && Array.isArray(response.data) && response.data.length > 0 
+        ? JSON.stringify(response.data[0]).substring(0, 500) 
+        : null
+    });
 
-    if (response.data && response.data.code === "0" && response.data.data) {
-      const formattedData = formatFundingData(response.data.data);
-      logger.info(`Отримано ${formattedData.length} записів про фандинг`);
-      return formattedData;
+    // Визначаємо, яка структура відповіді
+    let dataToFormat;
+    
+    if (Array.isArray(response.data)) {
+      // Якщо відповідь - це вже масив
+      logger.debug('Відповідь є масивом, використовуємо безпосередньо');
+      dataToFormat = response.data;
+    } else if (response.data && Array.isArray(response.data.data)) {
+      // Якщо відповідь має вкладений масив data (стандартний формат API)
+      logger.debug('Відповідь має вкладений масив data, використовуємо response.data.data');
+      dataToFormat = response.data.data;
+    } else {
+      // Невідома структура
+      logger.error('Невідома структура відповіді API:', response.data);
+      throw new Error('Неправильний формат відповіді API: не вдалося знайти масив даних');
     }
     
-    const errorMsg = 'Неправильний формат відповіді API';
-    logger.error(errorMsg, response.data);
-    throw new Error(errorMsg);
+    // Форматуємо дані
+    const formattedData = formatExtendedFundingData(dataToFormat);
+    
+    // Зберігаємо дані в кеш
+    fundingDataCache.data = formattedData;
+    fundingDataCache.timestamp = now;
+    
+    logger.info(`Отримано та кешовано ${formattedData.length} записів про фандинг`);
+    
+    // Додаємо дебаг-інформацію про перший токен
+    if (formattedData.length > 0) {
+      const firstToken = formattedData[0];
+      logger.debug('Приклад форматованих даних:', {
+        symbol: firstToken.symbol,
+        hasSymbolLogo: !!firstToken.symbolLogo,
+        stablecoinMarginCount: firstToken.stablecoin_margin_list?.length || 0,
+        tokenMarginCount: firstToken.token_margin_list?.length || 0,
+        sampleExchange: firstToken.stablecoin_margin_list?.length > 0 
+          ? firstToken.stablecoin_margin_list[0] 
+          : null
+      });
+    }
+    
+    return formattedData;
   } catch (error) {
     logger.apiError('Помилка отримання даних про фандинг', error, endpoint);
     throw error;
@@ -69,159 +120,75 @@ export const fetchFundingRates = async () => {
 };
 
 /**
- * Отримання ринкових даних для монет
- * @param {string} symbol - Символ криптовалюти (опціонально)
- * @returns {Promise<Array>} Масив об'єктів з ринковими даними
- */
-export const fetchCoinsMarkets = async (symbol = '') => {
-  const endpoint = `${ENDPOINTS.COINS_MARKETS}${symbol ? `?symbol=${symbol}` : ''}`;
-  const url = `${API_URL}${endpoint}`;
-  
-  try {
-    logger.debug(`Запит ринкових даних з ${url}`);
-    const startTime = performance.now();
-    
-    const response = await axios.get(url);
-    
-    const endTime = performance.now();
-    logger.debug(`Відповідь отримана за ${(endTime - startTime).toFixed(2)}ms`);
-    
-    if (IS_DEBUG) {
-      logger.debug('Відповідь API:', {
-        status: response.status,
-        statusText: response.statusText,
-        data: response.data
-      });
-    }
-    
-    if (response.data && response.data.code === "0" && response.data.data) {
-      logger.info(`Отримано ринкові дані${symbol ? ` для ${symbol}` : ''}`);
-      return response.data.data;
-    }
-    
-    const errorMsg = 'Неправильний формат відповіді API для ринкових даних';
-    logger.error(errorMsg, response.data);
-    throw new Error(errorMsg);
-  } catch (error) {
-    logger.apiError('Помилка отримання ринкових даних', error, endpoint, { symbol });
-    throw error;
-  }
-};
-
-/**
- * Отримання історичних даних фандингу
- * @param {string} symbol - Символ криптовалюти 
- * @param {string} exchange - Назва біржі
- * @param {number} days - Кількість днів для історії (за замовчуванням 7)
- * @returns {Promise<Object>} Дані історії фандингу
- */
-export const fetchHistoricalFunding = async (symbol, exchange, days = 7) => {
-  const params = { symbol, exchange, days };
-  const endpoint = `${ENDPOINTS.HISTORICAL_FUNDING}?symbol=${symbol}&exchange=${exchange}&days=${days}`;
-  const url = `${API_URL}${endpoint}`;
-  
-  try {
-    logger.debug(`Запит історичних даних фандингу з ${url}`, params);
-    const startTime = performance.now();
-    
-    const response = await axios.get(url);
-    
-    const endTime = performance.now();
-    logger.debug(`Відповідь отримана за ${(endTime - startTime).toFixed(2)}ms`);
-    
-    if (response.data && response.data.code === "0" && response.data.data) {
-      logger.info(`Отримано історичні дані фандингу для ${symbol} на ${exchange}`);
-      return response.data.data;
-    }
-    
-    const errorMsg = 'Неправильний формат відповіді API для історичних даних фандингу';
-    logger.error(errorMsg, response.data);
-    throw new Error(errorMsg);
-  } catch (error) {
-    logger.apiError('Помилка отримання історичних даних фандингу', error, endpoint, params);
-    throw error;
-  }
-};
-
-/**
- * Форматування даних з API для використання в додатку
- * @param {Array} data - Дані з API 
+ * Форматування розширених даних з нового API для використання в додатку
+ * @param {Array} responseData - Дані з API 
  * @returns {Array} Відформатовані дані у форматі, придатному для додатку
  */
-const formatFundingData = (data) => {
+const formatExtendedFundingData = (responseData) => {
   try {
-    logger.debug('Початок форматування даних фандингу', { 
-      dataLength: data.length,
-      sample: data.length > 0 ? data[0] : null 
+    if (!responseData || !Array.isArray(responseData)) {
+      logger.error('Неправильний формат даних від API', responseData);
+      return [];
+    }
+
+    logger.debug('Початок форматування даних Coinglass', {
+      dataLength: responseData.length,
+      sample: responseData.length > 0 ? JSON.stringify(responseData[0]).substring(0, 500) : null
     });
-    
-    const result = data.map(item => {
-      // Збираємо списки для stablecoin і token margin
-      const stablecoinMarginList = [];
-      const tokenMarginList = [];
 
-      // Обробка stablecoin_margin_list
-      if (Array.isArray(item.stablecoin_margin_list)) {
-        item.stablecoin_margin_list.forEach(exchange => {
-          if (exchange.exchange) {
-            stablecoinMarginList.push({
-              exchange: exchange.exchange,
-              funding_rate: parseFloat(exchange.funding_rate) || 0,
-              funding_rate_interval: exchange.funding_rate_interval || 8,
-              next_funding_time: exchange.next_funding_time || null,
-            });
-          }
-        });
-      }
+    return responseData.map(item => {
+      const {
+        symbol,
+        symbolLogo,
+        uMarginList = [],
+        cMarginList = [],
+        uIndexPrice,
+        uPrice
+      } = item;
 
-      // Обробка token_margin_list
-      if (Array.isArray(item.token_margin_list)) {
-        item.token_margin_list.forEach(exchange => {
-          if (exchange.exchange) {
-            tokenMarginList.push({
-              exchange: exchange.exchange,
-              funding_rate: parseFloat(exchange.funding_rate) || 0,
-              funding_rate_interval: exchange.funding_rate_interval || 8,
-              next_funding_time: exchange.next_funding_time || null,
-            });
-          }
-        });
-      }
+      const mapList = (list) =>
+        list
+          .filter(ex => ex.status === 1 || ex.status === 2)
+          .map(ex => ({
+            exchange: ex.exchangeName,
+            funding_rate: typeof ex.rate === 'number' ? ex.rate : parseFloat(ex.rate) || 0,
+            funding_rate_interval: ex.fundingIntervalHours || 8,
+            next_funding_time: ex.nextFundingTime || null,
+            predicted_rate: typeof ex.predictedRate === 'number'
+              ? ex.predictedRate
+              : parseFloat(ex.predictedRate) || null,
+            price: ex.price || null,
+            exchange_logo: ex.exchangeLogo || null,
+            status: ex.status,
+          }));
 
-      // Обчислюємо середню ставку фандингу для сортування і фільтрації
-      const rates = [
-        ...stablecoinMarginList.map(entry => entry.funding_rate),
-        ...tokenMarginList.map(entry => entry.funding_rate),
-      ].filter(rate => rate !== undefined && rate !== null && !isNaN(rate));
+      const stablecoinMarginList = mapList(uMarginList);
+      const tokenMarginList = mapList(cMarginList);
 
-      const fundingRate = rates.length > 0 
-        ? rates.reduce((acc, rate) => acc + rate, 0) / rates.length 
+      const allRates = [...stablecoinMarginList, ...tokenMarginList]
+        .map(e => e.funding_rate)
+        .filter(rate => typeof rate === 'number' && !isNaN(rate));
+
+      const fundingRate = allRates.length > 0
+        ? allRates.reduce((acc, rate) => acc + rate, 0) / allRates.length
         : 0;
 
-      // Повертаємо об'єкт у форматі, сумісному з FundingSection
+      const indexPrice = uIndexPrice ?? uPrice ?? null;
+
       return {
-        symbol: item.symbol || 'UNKNOWN',
+        symbol,
+        symbolLogo,
         stablecoin_margin_list: stablecoinMarginList,
         token_margin_list: tokenMarginList,
-        indexPrice: item.index_price || null,
         fundingRate,
+        indexPrice,
       };
     });
-    
-    logger.debug('Завершено форматування даних фандингу', { 
-      resultLength: result.length,
-      sample: result.length > 0 ? result[0] : null
-    });
-    
-    return result;
   } catch (error) {
-    logger.error('Помилка під час форматування даних фандингу', error);
+    logger.error('Помилка під час форматування розширених даних фандингу', error);
     throw new Error(`Помилка форматування даних: ${error.message}`);
   }
 };
 
-export default {
-  fetchFundingRates,
-  fetchCoinsMarkets,
-  fetchHistoricalFunding
-};
+
+// Інші функції залишаються без змін
