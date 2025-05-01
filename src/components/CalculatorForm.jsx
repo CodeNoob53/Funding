@@ -10,22 +10,20 @@ function CalculatorForm({ formValues, positionType, setPositionType, onChange, o
           <button
             type="button"
             onClick={() => setPositionType('long')}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors duration-200 ${
-              positionType === 'long'
-                ? 'bg-[rgb(var(--primary))] text-white'
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors duration-200 ${positionType === 'long'
+                ? 'bg-[rgb(var(--primary))] text-[rgb(var(--primary-foreground))]'
                 : 'text-[rgb(var(--foreground))/60] hover:bg-[rgb(var(--foreground))/10]'
-            }`}
+              }`}
           >
             Long
           </button>
           <button
             type="button"
             onClick={() => setPositionType('short')}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors duration-200 ${
-              positionType === 'short'
-                ? 'bg-[rgb(var(--primary))] text-white'
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors duration-200 ${positionType === 'short'
+                ? 'bg-[rgb(var(--primary))] text-[rgb(var(--primary-foreground))]'
                 : 'text-[rgb(var(--foreground))/60] hover:bg-[rgb(var(--foreground))/10]'
-            }`}
+              }`}
           >
             Short
           </button>
@@ -51,7 +49,7 @@ function CalculatorForm({ formValues, positionType, setPositionType, onChange, o
           />
         </div>
       </div>
-      
+
       <div>
         <label className="block mb-1 text-sm font-medium" htmlFor="leverage">
           Плече:
@@ -71,7 +69,7 @@ function CalculatorForm({ formValues, positionType, setPositionType, onChange, o
           />
         </div>
       </div>
-      
+
       <div>
         <label className="block mb-1 text-sm font-medium" htmlFor="positionSize">
           Розмір позиції ($):
@@ -91,7 +89,7 @@ function CalculatorForm({ formValues, positionType, setPositionType, onChange, o
           />
         </div>
       </div>
-      
+
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block mb-1 text-sm font-medium" htmlFor="openFee">
@@ -111,7 +109,7 @@ function CalculatorForm({ formValues, positionType, setPositionType, onChange, o
             />
           </div>
         </div>
-        
+
         <div>
           <label className="block mb-1 text-sm font-medium" htmlFor="closeFee">
             Комісія закриття (%):
@@ -131,7 +129,7 @@ function CalculatorForm({ formValues, positionType, setPositionType, onChange, o
           </div>
         </div>
       </div>
-      
+
       <div>
         <label className="block mb-1 text-sm font-medium" htmlFor="fundingRate">
           Ставка фандингу (% за 8 годин):
@@ -151,7 +149,7 @@ function CalculatorForm({ formValues, positionType, setPositionType, onChange, o
           />
         </div>
       </div>
-      
+
       <button type="submit" className="btn-primary w-full mt-6 py-3">
         Розрахувати
       </button>
