@@ -1,81 +1,80 @@
 import PropTypes from 'prop-types';
 import { FiBriefcase, FiDollarSign, FiPercent, FiTrendingUp, FiCreditCard } from 'react-icons/fi';
+import './CalculatorForm.css';
 
 function CalculatorForm({ formValues, positionType, setPositionType, onChange, onSubmit }) {
   return (
-    <form className="space-y-6" onSubmit={onSubmit}>
+    <form className="calculator-form" onSubmit={onSubmit}>
       {/* Перемикач Long/Short */}
-      <div className="flex justify-center mb-4">
-        <div className="inline-flex rounded-lg bg-[rgb(var(--card))/50] p-1 border border-[rgb(var(--border))]">
+      <div className="position-toggle-container">
+        <div className="position-toggle">
           <button
             type="button"
             onClick={() => setPositionType('long')}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors duration-200 ${positionType === 'long'
-                ? 'bg-[rgb(var(--primary))] text-[rgb(var(--primary-foreground))]'
-                : 'text-[rgb(var(--foreground))/60] hover:bg-[rgb(var(--foreground))/10]'
-              }`}
+            className={`toggle-button ${positionType === 'long' ? 'toggle-button-active' : 'toggle-button-inactive'}`}
           >
             Long
           </button>
           <button
             type="button"
             onClick={() => setPositionType('short')}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors duration-200 ${positionType === 'short'
-                ? 'bg-[rgb(var(--primary))] text-[rgb(var(--primary-foreground))]'
-                : 'text-[rgb(var(--foreground))/60] hover:bg-[rgb(var(--foreground))/10]'
-              }`}
+            className={`toggle-button ${positionType === 'short' ? 'toggle-button-active' : 'toggle-button-inactive'}`}
           >
             Short
           </button>
         </div>
       </div>
 
-      <div>
-        <label className="block mb-1 text-sm font-medium" htmlFor="entryPrice">
-          Ціна відкриття ($):
-        </label>
-        <div className="relative">
-          <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[rgb(var(--foreground))/60]">
-            <FiDollarSign size={16} />
+      {/* Група: Ціна відкриття + Плече */}
+      <div className="form-grid">
+        <div className="form-group">
+          <label className="form-label" htmlFor="entryPrice">
+            Ціна відкриття ($):
+          </label>
+          <div className="input-wrapper">
+            <div className="input-icon">
+              <FiDollarSign size={16} />
+            </div>
+            <input
+              type="number"
+              id="entryPrice"
+              step="0.01"
+              required
+              className="form-input"
+              value={formValues.entryPrice}
+              onChange={onChange}
+            />
           </div>
-          <input
-            type="number"
-            id="entryPrice"
-            step="0.01"
-            required
-            className="w-full pl-8 pr-3 py-2 text-sm rounded-md border border-[rgb(var(--border))] bg-[rgb(var(--background))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary))/50] transition-all"
-            value={formValues.entryPrice}
-            onChange={onChange}
-          />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label" htmlFor="leverage">
+            Плече:
+          </label>
+          <div className="input-wrapper">
+            <div className="input-icon">
+              <FiTrendingUp size={16} />
+            </div>
+            <input
+              type="number"
+              id="leverage"
+              step="0.1"
+              required
+              className="form-input"
+              value={formValues.leverage}
+              onChange={onChange}
+            />
+          </div>
         </div>
       </div>
 
-      <div>
-        <label className="block mb-1 text-sm font-medium" htmlFor="leverage">
-          Плече:
-        </label>
-        <div className="relative">
-          <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[rgb(var(--foreground))/60]">
-            <FiTrendingUp size={16} />
-          </div>
-          <input
-            type="number"
-            id="leverage"
-            step="0.1"
-            required
-            className="w-full pl-8 pr-3 py-2 text-sm rounded-md border border-[rgb(var(--border))] bg-[rgb(var(--background))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary))/50] transition-all"
-            value={formValues.leverage}
-            onChange={onChange}
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className="block mb-1 text-sm font-medium" htmlFor="positionSize">
+      {/* Група: Розмір позиції */}
+      <div className="form-group">
+        <label className="form-label" htmlFor="positionSize">
           Розмір позиції ($):
         </label>
-        <div className="relative">
-          <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[rgb(var(--foreground))/60]">
+        <div className="input-wrapper">
+          <div className="input-icon">
             <FiBriefcase size={16} />
           </div>
           <input
@@ -83,46 +82,47 @@ function CalculatorForm({ formValues, positionType, setPositionType, onChange, o
             id="positionSize"
             step="0.01"
             required
-            className="w-full pl-8 pr-3 py-2 text-sm rounded-md border border-[rgb(var(--border))] bg-[rgb(var(--background))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary))/50] transition-all"
+            className="form-input"
             value={formValues.positionSize}
             onChange={onChange}
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block mb-1 text-sm font-medium" htmlFor="openFee">
+      {/* Група: Комісії */}
+      <div className="form-grid">
+        <div className="form-group">
+          <label className="form-label" htmlFor="openFee">
             Комісія відкриття (%):
           </label>
-          <div className="relative">
-            <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[rgb(var(--foreground))/60]">
+          <div className="input-wrapper">
+            <div className="input-icon">
               <FiCreditCard size={16} />
             </div>
             <input
               type="number"
               id="openFee"
               step="0.001"
-              className="w-full pl-8 pr-3 py-2 text-sm rounded-md border border-[rgb(var(--border))] bg-[rgb(var(--background))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary))/50] transition-all"
+              className="form-input"
               value={formValues.openFee}
               onChange={onChange}
             />
           </div>
         </div>
 
-        <div>
-          <label className="block mb-1 text-sm font-medium" htmlFor="closeFee">
+        <div className="form-group">
+          <label className="form-label" htmlFor="closeFee">
             Комісія закриття (%):
           </label>
-          <div className="relative">
-            <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[rgb(var(--foreground))/60]">
+          <div className="input-wrapper">
+            <div className="input-icon">
               <FiCreditCard size={16} />
             </div>
             <input
               type="number"
               id="closeFee"
               step="0.001"
-              className="w-full pl-8 pr-3 py-2 text-sm rounded-md border border-[rgb(var(--border))] bg-[rgb(var(--background))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary))/50] transition-all"
+              className="form-input"
               value={formValues.closeFee}
               onChange={onChange}
             />
@@ -130,12 +130,13 @@ function CalculatorForm({ formValues, positionType, setPositionType, onChange, o
         </div>
       </div>
 
-      <div>
-        <label className="block mb-1 text-sm font-medium" htmlFor="fundingRate">
+      {/* Група: Ставка фандингу */}
+      <div className="form-group">
+        <label className="form-label" htmlFor="fundingRate">
           Ставка фандингу (% за 8 годин):
         </label>
-        <div className="relative">
-          <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[rgb(var(--foreground))/60]">
+        <div className="input-wrapper">
+          <div className="input-icon">
             <FiPercent size={16} />
           </div>
           <input
@@ -143,14 +144,14 @@ function CalculatorForm({ formValues, positionType, setPositionType, onChange, o
             id="fundingRate"
             step="0.001"
             required
-            className="w-full pl-8 pr-3 py-2 text-sm rounded-md border border-[rgb(var(--border))] bg-[rgb(var(--background))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary))/50] transition-all"
+            className="form-input"
             value={formValues.fundingRate}
             onChange={onChange}
           />
         </div>
       </div>
 
-      <button type="submit" className="btn-primary w-full mt-6 py-3">
+      <button type="submit" className="submit-button">
         Розрахувати
       </button>
     </form>

@@ -1,3 +1,4 @@
+// src/App.jsx
 import { useState, useEffect } from 'react';
 import Header from './components/Header';
 import FundingSection from './components/FundingSection';
@@ -6,6 +7,7 @@ import Footer from './components/Footer';
 import { fetchFundingRates } from './services/api';
 import useThemeStore from './store/themeStore';
 import logger from './services/logger';
+import './App.css';
 
 const APP_VERSION = import.meta.env.VITE_APP_VERSION || '0.2.0';
 
@@ -91,12 +93,12 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="app">
       <Header />
 
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="main-content">
         {lastUpdated && (
-          <div className="mb-4 text-sm text-[rgb(var(--foreground))/60] flex justify-end">
+          <div className="last-updated">
             Останнє оновлення: {formatUpdateTime(lastUpdated)}
           </div>
         )}
@@ -109,7 +111,7 @@ function App() {
           onSelectRate={handleSelectRate}
         />
 
-        <div className="mt-8">
+        <div className="calculator-container">
           <CalculatorSection
             selectedToken={selectedToken}
           />

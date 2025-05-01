@@ -1,0 +1,63 @@
+/* src/components/CalculatorSection.css */
+
+.calculator-section {
+    background: rgb(var(--card));
+    border: 1px solid rgb(var(--border));
+    border-radius: var(--border-radius-xl);
+  }
+  
+  .section-header {
+    padding: var(--spacing-6);
+    border-bottom: 1px solid rgb(var(--border));
+  }
+  
+  .section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: rgb(var(--foreground));
+  }
+  
+  .exchange-info {
+    padding: var(--spacing-4) var(--spacing-6);
+    padding-bottom: 0;
+  }
+  
+  .exchange-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(var(--foreground), 0.05);
+    padding: var(--spacing-3);
+    border-radius: var(--border-radius-lg);
+  }
+  
+  .exchange-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgb(var(--foreground));
+  }
+  
+  .exchange-content {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+  }
+  
+  .exchange-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: rgb(var(--foreground));
+  }
+  
+  .section-content {
+    padding: var(--spacing-6);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-6);
+  }
+  
+  @media (min-width: 1024px) {
+    .section-content {
+      grid-template-columns: 1fr 1fr;
+    }
+  }

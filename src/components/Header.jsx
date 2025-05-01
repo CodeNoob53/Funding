@@ -1,6 +1,8 @@
+// src/components/Header.jsx
 import { useState, useEffect } from 'react';
 import { FiSun, FiMoon } from 'react-icons/fi';
 import useThemeStore from '../store/themeStore';
+import './Header.css';
 
 function Header() {
   const { theme, toggleTheme } = useThemeStore();
@@ -22,31 +24,21 @@ function Header() {
   const isDarkMode = theme === 'dark';
 
   return (
-    <header 
-      className={`sticky top-0 z-10 transition-all duration-300 
-                 backdrop-blur-sm border-b border-[rgb(var(--border))]
-                 ${scrolled 
-                   ? 'bg-[rgb(var(--card))] shadow-md' 
-                   : 'bg-[rgb(var(--card))]'}`}
-    >
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between py-4">
-          <h1 className="text-xl md:text-2xl font-bold">
+    <header className={`header ${scrolled ? 'header-scrolled' : ''}`}>
+      <div className="container">
+        <div className="header-content">
+          <h1 className="header-title">
             Калькулятор Фандингу
           </h1>
           
-          <div className="flex items-center gap-4">
+          <div className="header-actions">
             <button 
               onClick={toggleTheme}
-              className="btn-ghost p-2 rounded-full"
+              className="btn-ghost btn-icon"
               aria-label="Змінити тему"
             >
               {isDarkMode ? <FiSun size={20} /> : <FiMoon size={20} />}
             </button>
-            
-            <span className="hidden md:block text-sm opacity-70">
-              Актуальні ставки фандингу
-            </span>
           </div>
         </div>
       </div>

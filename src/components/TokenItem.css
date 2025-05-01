@@ -1,0 +1,113 @@
+/* src/components/TokenItem.css */
+
+.token-row {
+    display: table-row;
+    transition: background 0.3s ease;
+  }
+  
+  .token-row:hover {
+    background: linear-gradient(90deg, rgba(var(--primary), 0.05), rgba(var(--primary), 0.1));
+  }
+  
+  .token-cell {
+    width: 200px;
+    display: table-cell;
+    padding: var(--spacing-4);
+    position: sticky;
+    left: 0;
+    background: rgb(var(--card));
+    z-index: 4;
+    vertical-align: middle;
+  }
+  
+  .token-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    font-weight: 500;
+    color: rgb(var(--foreground));
+  }
+  
+  .token-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .exchange-cell {
+    width: 100px;
+    display: table-cell;
+    padding: var(--spacing-3);
+    text-align: center;
+    vertical-align: middle;
+    border-left: 1px solid rgba(var(--border), 0.5);
+  }
+  
+  .rate-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-1);
+  }
+  
+  .rate-value {
+    font-weight: 500;
+    font-size: 0.875rem;
+  }
+  
+  .rate-positive {
+    color: rgb(var(--success));
+  }
+  
+  .rate-negative {
+    color: rgb(var(--error));
+  }
+  
+  .rate-neutral {
+    color: rgb(var(--foreground));
+  }
+  
+  .rate-predicted {
+    font-size: 0.75rem;
+    color: rgba(var(--foreground), 0.7);
+  }
+  
+  .rate-predicted-style {
+    opacity: 0.8;
+    font-style: italic;
+  }
+  
+  .rate-interval {
+    font-size: 0.75rem;
+    color: rgb(var(--foreground-secondary));
+  }
+  
+  .rate-empty {
+    color: rgba(var(--foreground), 0.3);
+  }
+  
+  @media (min-width: 768px) {
+    .token-cell {
+      width: 220px;
+    }
+    
+    .exchange-cell {
+      width: 110px;
+    }
+  }
+  
+  @media (max-width: 767px) {
+    .token-cell {
+      width: 180px;
+    }
+    
+    .exchange-cell {
+      width: 90px;
+    }
+    
+    .rate-value {
+      font-size: 0.75rem;
+    }
+  }

@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
+import './CalculationResults.css';
 
 function CalculationResults({ data }) {
   const [showAnimation, setShowAnimation] = useState(false);
@@ -14,8 +15,8 @@ function CalculationResults({ data }) {
 
   if (!data) {
     return (
-      <div className="flex items-center justify-center h-full min-h-[300px] bg-gray-50 rounded-xl border border-gray-200">
-        <p className="text-gray-500 italic">
+      <div className="results-placeholder">
+        <p className="placeholder-text">
           Заповніть форму і натисніть розрахувати, щоб побачити результати
         </p>
       </div>
@@ -23,81 +24,69 @@ function CalculationResults({ data }) {
   }
 
   return (
-    <div
-      className={`bg-[rgb(var(--card))] rounded-xl p-6 border border-[rgb(var(--border))] 
-              transition-all duration-500 
-              ${showAnimation ? 'animate-slide-up' : ''}`}
-    >
-      <h3 className="text-xl font-semibold text-[rgb(var(--foreground))] mb-4">
+    <div className={`results-container ${showAnimation ? 'animate-slide-up' : ''}`}>
+      <h3 className="results-title">
         {data.selectedSymbol
           ? `Результати для ${data.selectedSymbol}`
-          : 'Результати розрахунку'
-        }
+          : 'Результати розрахунку'}
       </h3>
 
-      <div className="space-y-4">
-        <div className="flex justify-between items-center p-3 bg-[rgb(var(--card))/50] rounded-lg shadow-sm border border-[rgb(var(--border))]">
-          <span className="font-medium">📈 Початкова маржа:</span>
-          <span className="font-semibold text-lg">${data.initialMargin.toFixed(2)}</span>
+      <div className="results-list">
+        <div className="result-item">
+          <span className="result-label">📈 Початкова маржа:</span>
+          <span className="result-value">${data.initialMargin.toFixed(2)}</span>
         </div>
 
-        <div className="flex justify-between items-center p-3 bg-[rgb(var(--card))/50] rounded-lg shadow-sm border border-[rgb(var(--border))]">
-          <span className="font-medium">🛡️ Рекомендована маржа:</span>
-          <span className="font-semibold text-lg">${data.recommendedMargin.toFixed(2)}</span>
+        <div className="result-item">
+          <span className="result-label">🛡️ Рекомендована маржа:</span>
+          <span className="result-value">${data.recommendedMargin.toFixed(2)}</span>
         </div>
 
-        <div className="flex justify-between items-center p-3 bg-[rgb(var(--card))/50] rounded-lg shadow-sm border border-[rgb(var(--border))]">
-          <span className="font-medium">🚨 Ціна ліквідації {data.positionType === 'short' ? '(для шорту)' : ''}:</span>
-          <span className="font-semibold text-lg text-error-500">
+        <div className="result-item">
+          <span className="result-label">🚨 Ціна ліквідації {data.positionType === 'short' ? '(для шорту)' : ''}:</span>
+          <span className="result-value result-value-error">
             ${data.liquidationPrice.toFixed(2)}
           </span>
         </div>
 
-        <div className="flex justify-between items-center p-3 bg-[rgb(var(--card))/50] rounded-lg shadow-sm border border-[rgb(var(--border))]">
-          <span className="font-medium">📉 Рух ціни до ліквідації:</span>
-          <span className="font-semibold text-lg">
-            {data.liquidationMove.toFixed(2)}%
-          </span>
+        <div className="result-item">
+          <span className="result-label">📉 Рух ціни до ліквідації:</span>
+          <span className="result-value">{data.liquidationMove.toFixed(2)}%</span>
         </div>
 
-        <div className="flex justify-between items-center p-3 bg-[rgb(var(--card))/50] rounded-lg shadow-sm border border-[rgb(var(--border))]">
-          <span className="font-medium">💸 Загальні комісії:</span>
-          <span className="font-semibold text-lg">${data.totalFees.toFixed(2)}</span>
+        <div className="result-item">
+          <span className="result-label">💸 Загальні комісії:</span>
+          <span className="result-value">${data.totalFees.toFixed(2)}</span>
         </div>
 
-        <div className="flex justify-between items-center p-3 border-l-4 border-accent-500 rounded-lg shadow-sm bg-[rgb(var(--card))/50]">
-          <span className="font-medium">🪙 Прибуток від фандингу (8 год):</span>
-          <span className={`font-semibold text-lg ${data.estimatedFundingProfit >= 0 ? 'text-accent-500' : 'text-error-500'}`}>
+        <div className="result-item result-item-highlight">
+          <span className="result-label">🪙 Прибуток від фандингу (8 год):</span>
+          <span className={`result-value ${data.estimatedFundingProfit >= 0 ? 'result-value-positive' : 'result-value-negative'}`}>
             ${data.estimatedFundingProfit.toFixed(2)}
           </span>
         </div>
-        <div className="flex justify-between items-center p-3 bg-[rgb(var(--card))/50] rounded-lg shadow-sm border border-[rgb(var(--border))]">
-          <span className="font-medium">📆 Щоденний прибуток (фандинг):</span>
-          <span className="font-semibold text-lg">
-            ${data.estimatedDailyFundingProfit.toFixed(2)}
-          </span>
+
+        <div className="result-item">
+          <span className="result-label">📆 Щоденний прибуток (фандинг):</span>
+          <span className="result-value">${data.estimatedDailyFundingProfit.toFixed(2)}</span>
         </div>
 
-        <div className="flex justify-between items-center p-3 bg-[rgb(var(--card))/50] rounded-lg shadow-sm border border-[rgb(var(--border))]">
-          <span className="font-medium">📅 Місячний прибуток (фандинг):</span>
-          <span className="font-semibold text-lg">
-            ${data.estimatedMonthlyFundingProfit.toFixed(2)}
-          </span>
+        <div className="result-item">
+          <span className="result-label">📅 Місячний прибуток (фандинг):</span>
+          <span className="result-value">${data.estimatedMonthlyFundingProfit.toFixed(2)}</span>
         </div>
 
-        <div className="flex justify-between items-center p-3 bg-[rgb(var(--card))/50] rounded-lg shadow-sm border border-[rgb(var(--border))]">
-          <span className="font-medium">📈 Річна прибутковість (APR):</span>
-          <span className="font-semibold text-lg">
-            {data.fundingAPR.toFixed(2)}%
-          </span>
+        <div className="result-item">
+          <span className="result-label">📈 Річна прибутковість (APR):</span>
+          <span className="result-value">{data.fundingAPR.toFixed(2)}%</span>
         </div>
-        <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-400">
-          <span className="font-medium">💰 Чистий прибуток (фандинг - комісії):</span>
-          <span className={`font-semibold text-lg ${data.netProfit >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+
+        <div className="result-item result-item-net-profit">
+          <span className="result-label">💰 Чистий прибуток (фандинг - комісії):</span>
+          <span className={`result-value ${data.netProfit >= 0 ? 'result-value-positive' : 'result-value-negative'}`}>
             ${data.netProfit.toFixed(2)}
           </span>
         </div>
-
       </div>
     </div>
   );

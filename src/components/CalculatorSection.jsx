@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import CalculatorForm from './CalculatorForm';
 import CalculationResults from './CalculationResults';
 import ExchangeIcon from './ExchangeIcon';
+import './CalculatorSection.css';
 
 function CalculatorSection({ selectedToken }) {
   const [calculationData, setCalculationData] = useState(null);
@@ -54,7 +55,6 @@ function CalculatorSection({ selectedToken }) {
 
     const totalFees = positionSize * (openFee + closeFee);
 
-    // Визначаємо, чи отримає трейдер фандинг
     const isProfitable =
       (positionType === 'long' && fundingRate < 0) ||
       (positionType === 'short' && fundingRate > 0);
@@ -85,7 +85,8 @@ function CalculatorSection({ selectedToken }) {
     });
   };
 
-  // Оновлюємо useEffect у CalculatorSection.jsx для правильної обробки позитивного/негативного фандингу
+  // У CalculatorSection.jsx
+
   useEffect(() => {
     if (selectedToken) {
       const bestExchange = getBestExchange(selectedToken);
@@ -97,24 +98,20 @@ function CalculatorSection({ selectedToken }) {
           ? (selectedToken.fundingRate * 100).toFixed(4)
           : '';
 
-      // Визначаємо тип позиції на основі знаку фандингу
-      // Для негативного фандингу вибираємо long, для позитивного - short
       const newPositionType = parseFloat(fundingRate) < 0 ? 'long' : 'short';
       setPositionType(newPositionType);
 
-      // Завжди зберігаємо абсолютне значення фандингу
       setFormValues(prevValues => ({
         ...prevValues,
         entryPrice:
           selectedToken.indexPrice !== undefined && selectedToken.indexPrice !== null
             ? selectedToken.indexPrice
             : prevValues.entryPrice,
-        fundingRate: Math.abs(parseFloat(fundingRate)),
+        fundingRate: parseFloat(fundingRate), // Видаляємо Math.abs, щоб зберігати знак
       }));
     }
   }, [selectedToken]);
 
-  // Оновлюємо ефект для зміни вибраної біржі
   useEffect(() => {
     if (selectedToken && selectedExchange) {
       const marginList = selectedToken.stablecoin_margin_list || [];
@@ -128,7 +125,7 @@ function CalculatorSection({ selectedToken }) {
 
         setFormValues(prev => ({
           ...prev,
-          fundingRate: parseFloat(fundingRate), // без Math.abs
+          fundingRate: parseFloat(fundingRate), // Зберігаємо знак
         }));
       }
     }
@@ -151,24 +148,24 @@ function CalculatorSection({ selectedToken }) {
   };
 
   return (
-    <section className="card">
-      <div className="p-6 border-b border-[rgb(var(--border))]">
-        <h2 className="text-xl font-semibold text-[rgb(var(--foreground))]">Калькулятор позиції</h2>
+    <section className="calculator-section">
+      <div className="section-header">
+        <h2 className="section-title">Калькулятор позиції</h2>
       </div>
 
       {selectedExchange && (
-        <div className="px-6 pt-4 pb-0">
-          <div className="flex items-center justify-between bg-[rgb(var(--foreground))]/5 p-3 rounded-lg">
-            <span className="text-sm font-medium text-[rgb(var(--foreground))]">Вибрана біржа:</span>
-            <div className="flex items-center gap-2">
+        <div className="exchange-info">
+          <div className="exchange-details">
+            <span className="exchange-label">Вибрана біржа:</span>
+            <div className="exchange-content">
               <ExchangeIcon exchange={selectedExchange} size={18} />
-              <span className="font-semibold text-[rgb(var(--foreground))]">{selectedExchange}</span>
+              <span className="exchange-name">{selectedExchange}</span>
             </div>
           </div>
         </div>
       )}
 
-      <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="section-content">
         <CalculatorForm
           formValues={formValues}
           positionType={positionType}
@@ -176,7 +173,6 @@ function CalculatorSection({ selectedToken }) {
           onChange={handleInputChange}
           onSubmit={handleCalculate}
         />
-
         <CalculationResults data={calculationData} />
       </div>
     </section>

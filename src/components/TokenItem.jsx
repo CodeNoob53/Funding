@@ -2,6 +2,8 @@
 import PropTypes from 'prop-types';
 import { memo } from 'react';
 import CryptoIcon from './CryptoIcon';
+import './TokenItem.css';
+import dayjs from 'dayjs';
 
 const TokenItem = memo(function TokenItem({ token, exchanges, marginType, onClick, onRateClick }) {
   const formatRate = (rate) => {
@@ -11,9 +13,18 @@ const TokenItem = memo(function TokenItem({ token, exchanges, marginType, onClic
 
   const formatHoursFromNow = (timestamp) => {
     if (!timestamp) return '';
-    const diffMs = timestamp - Date.now();
-    const diffHours = diffMs / (1000 * 60 * 60);
-    return diffHours > 0 ? `${diffHours.toFixed(1)}г` : '';
+    const now = dayjs();
+    const target = dayjs(Number(timestamp));
+    const diffMinutes = target.diff(now, 'minute');
+    if (diffMinutes <= 0) return '';
+    if (diffMinutes < 60) {
+      return `${diffMinutes}хв`;
+    }
+    const hours = Math.floor(diffMinutes / 60);
+    const minutes = diffMinutes % 60;
+    return minutes === 0
+      ? `${hours}г`
+      : `${hours}г ${minutes}хв`;
   };
 
   // Отримуємо список даних залежно від marginType
@@ -38,15 +49,11 @@ const TokenItem = memo(function TokenItem({ token, exchanges, marginType, onClic
     : {};
 
   return (
-    <tr
-      onClick={() => onClick(token)}
-      className="hover:bg-[rgb(var(--foreground))/5] cursor-pointer transition-colors"
-    >
-      <td className="py-4 px-6 text-left font-semibold text-sm text-[rgb(var(--foreground))]">
-        <div className="flex items-center gap-3">
-          {/* Використовуємо іконку з сервера, якщо вона доступна */}
+    <tr onClick={() => onClick(token)} className="token-row">
+      <td className="token-cell">
+        <div className="token-info">
           {token.symbolLogo ? (
-            <img src={token.symbolLogo} alt={token.symbol} className="w-6 h-6 rounded-full object-contain" />
+            <img src={token.symbolLogo} alt={token.symbol} className="token-icon" />
           ) : (
             <CryptoIcon symbol={token.symbol} size={4} />
           )}
@@ -58,8 +65,8 @@ const TokenItem = memo(function TokenItem({ token, exchanges, marginType, onClic
         const data = exchangeData[exchange];
         if (!data) {
           return (
-            <td key={exchange} className="text-center text-sm py-4 px-6">
-              <span className="text-[rgb(var(--foreground))/30]">—</span>
+            <td key={exchange} className="exchange-cell">
+              <span className="rate-empty">—</span>
             </td>
           );
         }
@@ -77,40 +84,32 @@ const TokenItem = memo(function TokenItem({ token, exchanges, marginType, onClic
         return (
           <td
             key={exchange}
-            className="text-center text-sm py-4 px-6"
+            className="exchange-cell"
             onClick={(e) => {
-              e.stopPropagation(); // Запобігаємо виклику onClick(token)
+              e.stopPropagation();
               if (data) {
                 onRateClick({ token, exchange, ...data });
               }
             }}
           >
             {rate !== undefined && rate !== null ? (
-              <div className="flex flex-col items-center gap-1">
-                <span
-                  className={`font-semibold ${
-                    isPositive ? 'text-green-500' : isNegative ? 'text-red-500' : 'text-[rgb(var(--foreground))/70]'
-                  } ${isPredicted ? 'italic' : ''}`}
-                >
+              <div className="rate-container">
+                <span className={`rate-value ${isPositive ? 'rate-positive' : isNegative ? 'rate-negative' : 'rate-neutral'} ${isPredicted ? 'rate-predicted-style' : ''}`}>
                   {formatRate(rate)}{isPredicted ? '*' : ''}
                 </span>
                 {predictedRate !== undefined && predictedRate !== null && predictedRate !== rate && !isPredicted && (
-                  <span
-                    className={`text-xs font-medium ${
-                      predictedRate > 0 ? 'text-green-400' : predictedRate < 0 ? 'text-red-400' : 'text-[rgb(var(--foreground))/50]'
-                    }`}
-                  >
+                  <span className={`rate-predicted ${predictedRate > 0 ? 'rate-positive' : predictedRate < 0 ? 'rate-negative' : 'rate-neutral'}`}>
                     Прогноз: {formatRate(predictedRate)}
                   </span>
                 )}
                 {(interval || nextIn) && (
-                  <span className="text-xs text-[rgb(var(--foreground))/50]">
+                  <span className="rate-interval">
                     {interval ? `${interval}г` : ''}{interval && nextIn ? ' • ' : ''}{nextIn}
                   </span>
                 )}
               </div>
             ) : (
-              <span className="text-[rgb(var(--foreground))/30]">—</span>
+              <span className="rate-empty">—</span>
             )}
           </td>
         );
