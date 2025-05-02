@@ -5,10 +5,11 @@ import CryptoIcon from './CryptoIcon';
 import './TokenItem.css';
 import dayjs from 'dayjs';
 
-const TokenItem = memo(function TokenItem({ token, exchanges, marginType, onClick, onRateClick }) {
+const TokenItem = memo(function TokenItem({ token, marginType, onClick, onRateClick }) {
   const formatRate = (rate) => {
     if (rate === undefined || rate === null || isNaN(rate)) return '—';
-    return `${(parseFloat(rate) * 100).toFixed(3)}%`;
+    // Прибираємо множення на 100, оскільки значення вже є у відсотках
+    return `${parseFloat(rate).toFixed(4)}%`;
   };
 
   const formatHoursFromNow = (timestamp) => {
@@ -61,11 +62,11 @@ const TokenItem = memo(function TokenItem({ token, exchanges, marginType, onClic
         </div>
       </td>
 
-      {exchanges.map((exchange) => {
-        const data = exchangeData[exchange];
+      {(token.filteredExchanges || []).map((exchange) => {
+        const data = exchangeData[exchange.key];
         if (!data) {
           return (
-            <td key={exchange} className="exchange-cell">
+            <td key={exchange.key} className="exchange-cell">
               <span className="rate-empty">—</span>
             </td>
           );
@@ -83,12 +84,12 @@ const TokenItem = memo(function TokenItem({ token, exchanges, marginType, onClic
 
         return (
           <td
-            key={exchange}
+            key={exchange.key}
             className="exchange-cell"
             onClick={(e) => {
               e.stopPropagation();
               if (data) {
-                onRateClick({ token, exchange, ...data });
+                onRateClick({ token, exchange: exchange.key, ...data });
               }
             }}
           >
@@ -122,10 +123,10 @@ TokenItem.propTypes = {
   token: PropTypes.shape({
     symbol: PropTypes.string.isRequired,
     symbolLogo: PropTypes.string,
+    filteredExchanges: PropTypes.arrayOf(PropTypes.shape({ key: PropTypes.string.isRequired })),
     stablecoin_margin_list: PropTypes.arrayOf(PropTypes.object),
     token_margin_list: PropTypes.arrayOf(PropTypes.object),
   }).isRequired,
-  exchanges: PropTypes.arrayOf(PropTypes.string).isRequired,
   marginType: PropTypes.oneOf(['stablecoin', 'token']).isRequired,
   onClick: PropTypes.func.isRequired,
   onRateClick: PropTypes.func.isRequired,

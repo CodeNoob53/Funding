@@ -1,3 +1,4 @@
+// src/components/CalculatorSection.jsx
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import CalculatorForm from './CalculatorForm';
@@ -86,17 +87,12 @@ function CalculatorSection({ selectedToken }) {
   };
 
   // У CalculatorSection.jsx
-
   useEffect(() => {
     if (selectedToken) {
       const bestExchange = getBestExchange(selectedToken);
       setSelectedExchange(bestExchange.exchange);
 
-      const fundingRate = bestExchange.rate
-        ? (parseFloat(bestExchange.rate) * 100).toFixed(4)
-        : selectedToken.fundingRate
-          ? (selectedToken.fundingRate * 100).toFixed(4)
-          : '';
+      const fundingRate = bestExchange.rate || selectedToken.fundingRate || 0;
 
       const newPositionType = parseFloat(fundingRate) < 0 ? 'long' : 'short';
       setPositionType(newPositionType);
@@ -107,7 +103,7 @@ function CalculatorSection({ selectedToken }) {
           selectedToken.indexPrice !== undefined && selectedToken.indexPrice !== null
             ? selectedToken.indexPrice
             : prevValues.entryPrice,
-        fundingRate: parseFloat(fundingRate), // Видаляємо Math.abs, щоб зберігати знак
+        fundingRate: parseFloat(fundingRate), // Зберігаємо значення без множення на 100
       }));
     }
   }, [selectedToken]);
@@ -119,13 +115,13 @@ function CalculatorSection({ selectedToken }) {
       const match = marginList.find(entry => entry.exchange?.toLowerCase() === selectedExchange.toLowerCase());
 
       if (match && match.funding_rate !== undefined && match.funding_rate !== null) {
-        const fundingRate = (parseFloat(match.funding_rate) * 100).toFixed(4);
-        const newPositionType = parseFloat(fundingRate) < 0 ? 'long' : 'short';
+        const fundingRate = parseFloat(match.funding_rate); // Зберігаємо значення без множення на 100
+        const newPositionType = fundingRate < 0 ? 'long' : 'short';
         setPositionType(newPositionType);
 
         setFormValues(prev => ({
           ...prev,
-          fundingRate: parseFloat(fundingRate), // Зберігаємо знак
+          fundingRate: fundingRate,
         }));
       }
     }

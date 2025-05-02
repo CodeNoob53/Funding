@@ -9,13 +9,36 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('stablecoin');
   const [visibleCount, setVisibleCount] = useState(50);
+  const [showFilters, setShowFilters] = useState(false);
+  const [minFundingRate, setMinFundingRate] = useState(() => {
+    return parseFloat(localStorage.getItem('minFundingRate')) || 0.15;
+  });
+  const [rateSignFilter, setRateSignFilter] = useState(() => {
+    return localStorage.getItem('rateSignFilter') || 'all';
+  });
+  const [displayMode, setDisplayMode] = useState(() => {
+    return localStorage.getItem('displayMode') || 'option1';
+  });
+  const [filtersEnabled, setFiltersEnabled] = useState({
+    minRate: localStorage.getItem('filterMinRateEnabled') === 'true' || true,
+    rateSign: localStorage.getItem('filterRateSignEnabled') === 'true' || true,
+  });
+
+  // Збереження налаштувань у localStorage
+  useEffect(() => {
+    localStorage.setItem('minFundingRate', minFundingRate);
+    localStorage.setItem('rateSignFilter', rateSignFilter);
+    localStorage.setItem('displayMode', displayMode);
+    localStorage.setItem('filterMinRateEnabled', filtersEnabled.minRate);
+    localStorage.setItem('filterRateSignEnabled', filtersEnabled.rateSign);
+  }, [minFundingRate, rateSignFilter, displayMode, filtersEnabled]);
 
   // Оптимізація для обчислення доступних бірж з сортуванням
   const availableExchanges = useMemo(() => {
     if (!fundingData?.length) return [];
 
-    const exchangeCounts = new Map(); // Зберігаємо кількість активних монет для кожної біржі
-    const logoMap = new Map(); // Зберігаємо логотипи бірж
+    const exchangeCounts = new Map();
+    const logoMap = new Map();
 
     fundingData.forEach((item) => {
       const list = activeTab === 'stablecoin' ? item.stablecoin_margin_list : item.token_margin_list;
@@ -39,19 +62,42 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
         logoUrl: logoMap.get(exchange.charAt(0).toUpperCase() + exchange.slice(1)) || null,
         activeCount: count,
       }))
-      .sort((a, b) => b.activeCount - a.activeCount); // Сортуємо за спаданням кількості активних монет
+      .sort((a, b) => b.activeCount - a.activeExchangesCount);
   }, [fundingData, activeTab]);
 
   // Оптимізація для фільтрації та сортування токенів
   const filteredTokens = useMemo(() => {
     if (!fundingData?.length) return [];
 
-    const filtered = fundingData
+    return fundingData
       .filter((token) => {
         const matchesSearch = token.symbol?.toLowerCase().includes(searchQuery.toLowerCase()) || !searchQuery;
         const marginList = activeTab === 'stablecoin' ? token.stablecoin_margin_list : token.token_margin_list;
         const hasMarginList = Array.isArray(marginList) && marginList.length > 0;
-        return matchesSearch && hasMarginList;
+
+        if (!hasMarginList || !matchesSearch) return false;
+
+        // Фільтр за мінімальною ставкою, якщо увімкнено
+        // minFundingRate і funding_rate обидва в процентах (наприклад, 0.096 і -0.0082)
+        const hasHighFundingRate = marginList.some(
+          (entry) => entry.funding_rate !== undefined && entry.funding_rate !== null && Math.abs(entry.funding_rate) >= minFundingRate
+        );
+
+        // Фільтр за знаком ставки, якщо увімкнено
+        const matchesRateSign = marginList.some((entry) => {
+          if (entry.funding_rate === undefined || entry.funding_rate === null) return false;
+          if (!filtersEnabled.rateSign) return true;
+          if (rateSignFilter === 'all') return true;
+          if (rateSignFilter === 'positive') return entry.funding_rate > 0;
+          if (rateSignFilter === 'negative') return entry.funding_rate < 0;
+          return false;
+        });
+
+        // Застосування фільтрів лише якщо вони увімкнені
+        const minRateCondition = !filtersEnabled.minRate || hasHighFundingRate;
+        const signCondition = matchesRateSign;
+
+        return minRateCondition && signCondition;
       })
       .map((token) => {
         const marginList = activeTab === 'stablecoin' ? token.stablecoin_margin_list : token.token_margin_list;
@@ -60,12 +106,24 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
               (entry) => entry.funding_rate !== undefined && entry.funding_rate !== null
             ).length
           : 0;
-        return { ...token, activeExchangesCount };
-      });
 
-    // Сортуємо за кількістю бірж з активними funding rates
-    return filtered.sort((a, b) => b.activeExchangesCount - a.activeExchangesCount);
-  }, [fundingData, searchQuery, activeTab]);
+        // Фільтрація бірж залежно від displayMode
+        const filteredExchanges = displayMode === 'option2'
+          ? availableExchanges
+              .map((ex) => ({
+                ...ex,
+                data: marginList.find((entry) => entry.exchange?.toLowerCase() === ex.key),
+              }))
+              .filter((ex) => ex.data && Math.abs(ex.data.funding_rate) >= minFundingRate)
+          : availableExchanges.map((ex) => ({
+              ...ex,
+              data: marginList.find((entry) => entry.exchange?.toLowerCase() === ex.key),
+            }));
+
+        return { ...token, activeExchangesCount, filteredExchanges };
+      })
+      .sort((a, b) => b.activeExchangesCount - a.activeExchangesCount);
+  }, [fundingData, searchQuery, activeTab, minFundingRate, rateSignFilter, displayMode, filtersEnabled, availableExchanges]);
 
   // Завантаження більше рядків при прокрутці
   const handleScroll = useCallback(
@@ -81,7 +139,7 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
   // Скидаємо лічильник видимих рядків при зміні фільтра або вкладки
   useEffect(() => {
     setVisibleCount(50);
-  }, [searchQuery, activeTab]);
+  }, [searchQuery, activeTab, minFundingRate, rateSignFilter, displayMode, filtersEnabled]);
 
   // Оптимізація обробників подій
   const handleTokenClick = useCallback(
@@ -106,14 +164,80 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
           Ставки фінансування
           {isLoading && <div className="loading-spinner"></div>}
         </h2>
-        <input
-          type="text"
-          placeholder="Пошук токена..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="funding-search"
-        />
+        <div className="search-and-filters">
+          <input
+            type="text"
+            placeholder="Пошук токена..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="funding-search"
+          />
+          <button
+            className="filter-button"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            Фільтри
+          </button>
+        </div>
       </div>
+
+      {/* Панель фільтрів */}
+      {showFilters && (
+        <div className="filter-panel">
+          <div className="filter-group">
+            <label>
+              <input
+                type="checkbox"
+                checked={filtersEnabled.minRate}
+                onChange={(e) => setFiltersEnabled((prev) => ({ ...prev, minRate: e.target.checked }))}
+              />
+              Фільтр за мінімальною ставкою (наприклад, 0.096 = 0.096%)
+            </label>
+            <input
+              type="number"
+              value={minFundingRate}
+              onChange={(e) => setMinFundingRate(parseFloat(e.target.value) || 0)}
+              step="0.01"
+              min="0"
+              className="filter-input"
+              disabled={!filtersEnabled.minRate}
+            />
+          </div>
+          <div className="filter-group">
+            <label>
+              <input
+                type="checkbox"
+                checked={filtersEnabled.rateSign}
+                onChange={(e) => setFiltersEnabled((prev) => ({ ...prev, rateSign: e.target.checked }))}
+              />
+              Фільтр за типом ставки
+            </label>
+            <select
+              value={rateSignFilter}
+              onChange={(e) => setRateSignFilter(e.target.value)}
+              className="filter-select"
+              disabled={!filtersEnabled.rateSign}
+            >
+              <option value="all">Всі</option>
+              <option value="positive">Позитивні</option>
+              <option value="negative">Негативні</option>
+            </select>
+          </div>
+          <div className="filter-group">
+            <label>
+              Режим відображення:
+              <select
+                value={displayMode}
+                onChange={(e) => setDisplayMode(e.target.value)}
+                className="filter-select"
+              >
+                <option value="option1">Всі біржі (якщо ≥ на одній)</option>
+                <option value="option2">Тільки біржі ≥ значення</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      )}
 
       {/* Вкладки */}
       <div className="funding-tabs">
@@ -166,7 +290,7 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
                 <TokenItem
                   key={`${token.symbol}-${activeTab}`}
                   token={token}
-                  exchanges={availableExchanges.map((e) => e.key)}
+                  exchanges={token.filteredExchanges.map((e) => e.key)}
                   marginType={activeTab}
                   onClick={handleTokenClick}
                   onRateClick={handleRateClick}
