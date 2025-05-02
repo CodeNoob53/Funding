@@ -2,6 +2,7 @@
 /* Імпорт стилів tippy.js */
 @import 'tippy.js/dist/tippy.css';
 @import 'tippy.js/themes/light.css'; /* Опціонально: світла тема для підказок */
+
 /* 1. Змінні та глобальні стилі */
 :root {
   /* Темна тема за замовчуванням */
@@ -45,6 +46,7 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
   --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
+
 /* Ресет базових стилів */
 * {
   margin: 0;
@@ -306,6 +308,41 @@ body {
 /* Адаптивні стилі */
 .hidden {
   display: none;
+}
+
+/* Кастомні стилі для tippy з урахуванням теми */
+.tippy-tooltip {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border-radius: var(--border-radius-sm);
+  box-shadow: var(--shadow-md);
+  background-color: rgb(var(--card));
+  color: rgb(var(--foreground));
+  border: 1px solid rgb(var(--border));
+}
+
+.tippy-tooltip[data-theme="light"] {
+  background-color: rgb(var(--card));
+  color: rgb(var(--foreground));
+  border-color: rgb(var(--border));
+}
+
+.tippy-tooltip[data-theme="dark"] {
+  background-color: rgba(var(--card), 0.9);
+  color: rgb(var(--foreground));
+  border-color: rgba(var(--border), 0.8);
+}
+
+.tippy-arrow {
+  color: rgb(var(--card));
+}
+
+.tippy-arrow[data-theme="light"] {
+  color: rgb(var(--card));
+}
+
+.tippy-arrow[data-theme="dark"] {
+  color: rgba(var(--card), 0.9);
 }
 
 @media (min-width: 768px) {

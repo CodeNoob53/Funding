@@ -93,7 +93,7 @@ function App() {
   };
 
   return (
-    <div className="app">
+    <div className="app" data-theme={theme}>
       <Header />
 
       <main className="main-content">

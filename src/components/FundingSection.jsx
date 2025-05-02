@@ -4,6 +4,9 @@ import PropTypes from 'prop-types';
 import TokenItem from './TokenItem';
 import ExchangeIcon from './ExchangeIcon';
 import './FundingSection.css';
+import { IoFilter } from 'react-icons/io5'; // Іконка для фільтра
+import { Tooltip } from 'react-tippy'; // Імпорт Tooltip для підказок
+import 'react-tippy/dist/tippy.css';
 
 function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelectRate }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -165,19 +168,31 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
           {isLoading && <div className="loading-spinner"></div>}
         </h2>
         <div className="search-and-filters">
-          <input
-            type="text"
-            placeholder="Пошук токена..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="funding-search"
-          />
-          <button
-            className="filter-button"
-            onClick={() => setShowFilters(!showFilters)}
+          <div className="search-wrapper">
+            <input
+              type="text"
+              placeholder="Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="funding-search"
+            />
+            <span className="search-icon"></span>
+          </div>
+          <Tooltip
+            title="Відкрити налаштування фільтрів"
+            position="top"
+            trigger="mouseenter"
+            theme="light"
+            arrow
+            data-theme="light" // Передача теми для стилів
           >
-            Фільтри
-          </button>
+            <button
+              className="filter-button"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <IoFilter size={20} />
+            </button>
+          </Tooltip>
         </div>
       </div>
 
@@ -241,18 +256,36 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
 
       {/* Вкладки */}
       <div className="funding-tabs">
-        <button
-          onClick={() => setActiveTab('stablecoin')}
-          className={`tab-button ${activeTab === 'stablecoin' ? 'tab-button-active' : 'tab-button-inactive'}`}
+        <Tooltip
+          title="Показати ставки для Stablecoin Margin"
+          position="top"
+          trigger="mouseenter"
+          theme="light"
+          arrow
+          data-theme="light"
         >
-          Stablecoin Margin
-        </button>
-        <button
-          onClick={() => setActiveTab('token')}
-          className={`tab-button ${activeTab === 'token' ? 'tab-button-active' : 'tab-button-inactive'}`}
+          <button
+            onClick={() => setActiveTab('stablecoin')}
+            className={`tab-button ${activeTab === 'stablecoin' ? 'tab-button-active' : 'tab-button-inactive'}`}
+          >
+            Stablecoin Margin
+          </button>
+        </Tooltip>
+        <Tooltip
+          title="Показати ставки для Token Margin"
+          position="top"
+          trigger="mouseenter"
+          theme="light"
+          arrow
+          data-theme="light"
         >
-          Token Margin
-        </button>
+          <button
+            onClick={() => setActiveTab('token')}
+            className={`tab-button ${activeTab === 'token' ? 'tab-button-active' : 'tab-button-inactive'}`}
+          >
+            Token Margin
+          </button>
+        </Tooltip>
       </div>
 
       {/* Інформація про кількість токенів */}
