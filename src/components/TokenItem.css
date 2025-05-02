@@ -33,7 +33,13 @@
     height: 1.5rem;
     border-radius: 50%;
     object-fit: cover;
+    background-color: rgba(255, 255, 255, 0.212);
     box-shadow: var(--shadow-sm);
+  }
+  
+  .token-icon[src$="TokenCap.avif"],
+  .exchange-cell img[src$="ExchangeCap.avif"] {
+    opacity: 0.8; /* Легка прозорість для заглушок */
   }
   
   .exchange-cell {

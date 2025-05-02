@@ -8,18 +8,18 @@
     background: rgb(var(--card));
     border: 1px solid rgb(var(--border));
     border-radius: var(--border-radius-xl);
-  }
-  
-  /* Заголовок і область пошуку */
-  .funding-header {
+}
+
+/* Заголовок і область пошуку */
+.funding-header {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-4);
     margin-bottom: var(--spacing-6);
     align-items: flex-start;
-  }
-  
-  .funding-title {
+}
+
+.funding-title {
     font-size: 1.75rem;
     font-weight: 700;
     color: rgb(var(--foreground));
@@ -34,25 +34,25 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-  }
-  
-  .loading-spinner {
+}
+
+.loading-spinner {
     width: 1.5rem;
     height: 1.5rem;
     border: 3px solid rgb(var(--primary));
     border-top-color: transparent;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-  }
-  
-  /* Стилі для пошуку */
-  .search-wrapper {
+}
+
+/* Стилі для пошуку */
+.search-wrapper {
     position: relative;
     max-width: 400px;
     width: 100%;
-  }
-  
-  .funding-search {
+}
+
+.funding-search {
     width: 100%;
     padding: var(--spacing-3) var(--spacing-4) var(--spacing-3) calc(var(--spacing-4) + 24px);
     font-size: 0.875rem;
@@ -61,15 +61,15 @@
     color: rgb(var(--foreground));
     border: 1px solid rgb(var(--border));
     box-shadow: var(--shadow-sm);
-  }
-  
-  .funding-search:focus {
+}
+
+.funding-search:focus {
     outline: none;
     border-color: rgb(var(--primary));
     box-shadow: 0 0 0 2px rgba(var(--primary), 0.5);
-  }
-  
-  .search-icon {
+}
+
+.search-icon {
     position: absolute;
     left: var(--spacing-3);
     top: 50%;
@@ -78,19 +78,19 @@
     height: 16px;
     background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='rgb(176, 176, 176)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat center;
     background-size: contain;
-  }
-  
-  /* Вкладки */
-  .funding-tabs {
+}
+
+/* Вкладки */
+.funding-tabs {
     display: flex;
     gap: var(--spacing-2);
     margin-bottom: var(--spacing-4);
     border-bottom: 2px solid rgb(var(--border));
     padding: 0;
     background: transparent;
-  }
-  
-  .tab-button {
+}
+
+.tab-button {
     padding: var(--spacing-2) var(--spacing-4);
     font-size: 0.875rem;
     font-weight: 600;
@@ -99,13 +99,13 @@
     position: relative;
     color: rgba(var(--foreground), 0.7);
     transition: color 0.3s ease;
-  }
-  
-  .tab-button-active {
+}
+
+.tab-button-active {
     color: rgb(var(--foreground));
-  }
-  
-  .tab-button-active::after {
+}
+
+.tab-button-active::after {
     content: '';
     position: absolute;
     bottom: -2px;
@@ -113,21 +113,21 @@
     width: 100%;
     height: 2px;
     background: rgb(var(--primary));
-  }
-  
-  .tab-button-inactive:hover {
+}
+
+.tab-button-inactive:hover {
     color: rgb(var(--foreground));
-  }
-  
-  /* Інформація про кількість токенів */
-  .funding-info {
+}
+
+/* Інформація про кількість токенів */
+.funding-info {
     font-size: 0.875rem;
     color: rgb(var(--foreground-secondary));
     margin-bottom: var(--spacing-4);
-  }
-  
-  /* Помилка */
-  .funding-error {
+}
+
+/* Помилка */
+.funding-error {
     padding: var(--spacing-4);
     background: linear-gradient(
       135deg,
@@ -137,17 +137,17 @@
     color: rgb(var(--error));
     border-radius: var(--border-radius-md);
     text-align: center;
-  }
-  
-  /* Повідомлення про відсутність даних */
-  .funding-empty {
+}
+
+/* Повідомлення про відсутність даних */
+.funding-empty {
     padding: var(--spacing-4);
     color: rgb(var(--foreground-secondary));
     text-align: center;
-  }
-  
-  /* Контейнер таблиці */
-  .funding-table-container {
+}
+
+/* Контейнер таблиці */
+.funding-table-container {
     max-height: 600px;
     overflow-y: auto;
     overflow-x: auto;
@@ -155,17 +155,17 @@
     scrollbar-color: rgb(var(--primary)) rgb(var(--border));
     border-radius: var(--border-radius-md);
     border: 1px solid rgb(var(--border));
-  }
-  
-  /* Таблиця */
-  .funding-table {
+}
+
+/* Таблиця */
+.funding-table {
     width: 100%;
     min-width: 800px;
     border-collapse: collapse;
     table-layout: fixed;
-  }
-  
-  .funding-table-header {
+}
+
+.funding-table-header {
     position: sticky;
     top: 0;
     z-index: 10;
@@ -176,14 +176,14 @@
     );
     backdrop-filter: blur(6px);
     box-shadow: var(--shadow-sm);
-  }
-  
-  .funding-table-row {
+}
+
+.funding-table-row {
     display: table-row;
     transition: background 0.3s ease;
-  }
-  
-  .funding-table th {
+}
+
+.funding-table th {
     font-size: 0.75rem;
     letter-spacing: 0.05em;
     padding: var(--spacing-2) var(--spacing-3);
@@ -199,9 +199,9 @@
       rgba(var(--card), 0.98),
       rgba(var(--card), 0.9)
     );
-  }
-  
-  .coin-header {
+}
+
+.coin-header {
     width: 200px;
     font-weight: 700;
     color: rgb(var(--foreground));
@@ -216,16 +216,16 @@
     left: 0;
     z-index: 5;
     text-align: left;
-  }
-  
-  .exchange-header {
+}
+
+.exchange-header {
     width: 100px;
-    padding: var(--spacing-2) var(--spacing-2);
+    padding: var(--spacing-2);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: var(--spacing-1);
+    gap: var(--spacing-3); /* Збільшено gap для кращого вирівнювання */
     background: linear-gradient(
       135deg,
       rgba(var(--card), 0.98),
@@ -234,124 +234,149 @@
     border-bottom: 1px solid rgb(var(--border));
     transition: background 0.3s ease, transform 0.2s ease;
     border-left: 1px solid rgba(var(--border), 0.5);
-  }
-  
-  .exchange-header:hover {
+}
+
+.exchange-header:hover {
     background: linear-gradient(
       135deg,
       rgba(var(--primary), 0.15),
       rgba(var(--primary), 0.05)
     );
     transform: translateY(-2px);
-  }
-  
-  .exchange-header img {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    object-fit: cover;
-    box-shadow: var(--shadow-sm);
-    transition: transform 0.3s ease;
-  }
-  
-  .exchange-header:hover img {
+}
+
+
+.exchange-header img[src$="ExchangeCap.avif"] {
+    opacity: 0.8; /* Легка прозорість для заглушки */
+}
+
+.exchange-header:hover img {
     transform: scale(1.1);
-  }
-  
-  .exchange-header span {
-    font-size: 0.65rem;
+}
+
+.exchange-header span {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: rgb(var(--foreground-secondary));
+    color: rgb(var(--foreground));
     text-align: center;
-    line-height: 1.2;
-  }
-  
-  .load-more-message {
+    line-height: 1.8rem;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.exchange-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.exchange-header-logo {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  background-color: rgba(240, 248, 255, 0.11);
+  border-radius: 4px;
+  border: 1px solid rgb(var(--border));
+  display: block;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.3s ease;
+
+}
+
+.exchange-header-name {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.load-more-message {
     text-align: center;
     color: rgb(var(--foreground-secondary));
     font-size: 0.875rem;
     padding: var(--spacing-4);
-  }
-  
-  .empty-message {
+}
+
+.empty-message {
     text-align: center;
     color: rgb(var(--foreground-secondary));
     font-size: 0.875rem;
     padding: var(--spacing-4);
-  }
-  
-  /* Анімації */
-  @keyframes spin {
+}
+
+/* Анімації */
+@keyframes spin {
     to {
-      transform: rotate(360deg);
+        transform: rotate(360deg);
     }
-  }
-  
-  @keyframes fadeIn {
+}
+
+@keyframes fadeIn {
     from {
-      opacity: 0;
+        opacity: 0;
     }
     to {
-      opacity: 1;
+        opacity: 1;
     }
-  }
-  
-  /* Адаптивність */
-  @media (min-width: 768px) {
+}
+
+/* Адаптивність */
+@media (min-width: 768px) {
     .funding-header {
-      flex-direction: row;
-      align-items: center;
-      justify-content: space-between;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
     }
-  
+
     .funding-title {
-      font-size: 2rem;
+        font-size: 2rem;
     }
-  
-    .exchange-header img {
-      width: 24px;
-      height: 24px;
-    }
-  
+
+
     .coin-header {
-      width: 220px;
+        width: 220px;
     }
-  
+
     .exchange-header {
-      width: 110px;
+        width: 110px;
     }
-  }
-  
-  @media (max-width: 767px) {
-    .coin-header {
-      width: 180px;
-    }
-  
-    .exchange-header {
-      width: 90px;
-    }
-  
-    .exchange-header img {
-      width: 18px;
-      height: 18px;
-    }
-  
+
     .exchange-header span {
-      font-size: 0.6rem;
+        font-size: 0.8rem; /* Трішки більший шрифт */
     }
-  }
-  
-  /* Стилі для пошуку та фільтрів */
-  .search-and-filters {
+}
+
+@media (max-width: 767px) {
+    .coin-header {
+        width: 180px;
+    }
+
+    .exchange-header {
+        width: 90px;
+    }
+
+    .exchange-header img {
+        width: 16px; /* Менший розмір для мобільних */
+        height: 16px;
+    }
+
+    .exchange-header span {
+        font-size: 0.6rem;
+    }
+}
+
+/* Стилі для пошуку та фільтрів */
+.search-and-filters {
     display: flex;
     gap: var(--spacing-2);
     align-items: center;
     flex-wrap: wrap;
-  }
-  
-  .filter-button {
+}
+
+.filter-button {
     padding: var(--spacing-2);
     background: transparent;
     color: rgb(var(--foreground));
@@ -366,20 +391,20 @@
     justify-content: center;
     width: 36px;
     height: 36px;
-  }
-  
-  .filter-button:hover {
+}
+
+.filter-button:hover {
     background: rgba(var(--primary), 0.1);
     transform: scale(1.05);
     box-shadow: var(--shadow-md);
-  }
-  
-  .filter-button:focus {
+}
+
+.filter-button:focus {
     outline: none;
     box-shadow: 0 0 0 3px rgba(var(--primary), 0.3);
-  }
-  
-  .filter-panel {
+}
+
+.filter-panel {
     margin: var(--spacing-4) 0;
     padding: var(--spacing-4);
     background: linear-gradient(135deg, rgba(var(--card), 0.95), rgba(var(--card), 0.85));
@@ -387,48 +412,48 @@
     border-radius: var(--border-radius-md);
     box-shadow: var(--shadow-sm);
     animation: fadeIn 0.3s ease-out;
-  }
-  
-  .filter-group {
+}
+
+.filter-group {
     display: flex;
     align-items: center;
     gap: var(--spacing-3);
     margin-bottom: var(--spacing-3);
     flex-wrap: wrap;
-  }
-  
-  .filter-group:last-child {
+}
+
+.filter-group:last-child {
     margin-bottom: 0;
-  }
-  
-  .filter-group label {
+}
+
+.filter-group label {
     display: flex;
     align-items: center;
     gap: var(--spacing-2);
     color: rgb(var(--foreground));
     font-size: 0.875rem;
     font-weight: 500;
-  }
-  
-  .filter-group input[type="checkbox"] {
+}
+
+.filter-group input[type="checkbox"] {
     width: var(--spacing-4);
     height: var(--spacing-4);
     accent-color: rgb(var(--primary));
     cursor: pointer;
     transition: transform 0.2s ease;
-  }
-  
-  .filter-group input[type="checkbox"]:hover {
+}
+
+.filter-group input[type="checkbox"]:hover {
     transform: scale(1.1);
-  }
-  
-  .filter-group input[type="checkbox"]:disabled {
+}
+
+.filter-group input[type="checkbox"]:disabled {
     cursor: not-allowed;
     opacity: 0.6;
-  }
-  
-  .filter-input,
-  .filter-select {
+}
+
+.filter-input,
+.filter-select {
     padding: var(--spacing-2) var(--spacing-3);
     border: 1px solid rgb(var(--border));
     border-radius: var(--border-radius-sm);
@@ -436,46 +461,46 @@
     color: rgb(var(--foreground));
     font-size: 0.875rem;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  }
-  
-  .filter-input:focus,
-  .filter-select:focus {
+}
+
+.filter-input:focus,
+.filter-select:focus {
     outline: none;
     border-color: rgb(var(--primary));
     box-shadow: 0 0 0 2px rgba(var(--primary), 0.3);
-  }
-  
-  .filter-input:disabled,
-  .filter-select:disabled {
+}
+
+.filter-input:disabled,
+.filter-select:disabled {
     background: rgba(var(--card), 0.5);
     cursor: not-allowed;
-  }
-  
-  .filter-input {
+}
+
+.filter-input {
     width: 100px;
-  }
-  
-  .filter-select {
+}
+
+.filter-select {
     width: 150px;
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23686868' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right var(--spacing-2) center;
     background-size: 12px;
-  }
-  
-  @media (max-width: 768px) {
+}
+
+@media (max-width: 768px) {
     .filter-panel {
-      flex-direction: column;
+        flex-direction: column;
     }
-  
+
     .filter-group {
-      flex-direction: column;
-      align-items: flex-start;
+        flex-direction: column;
+        align-items: flex-start;
     }
-  
+
     .filter-input,
     .filter-select {
-      width: 100%;
+        width: 100%;
     }
-  }
+}

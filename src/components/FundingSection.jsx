@@ -2,11 +2,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import TokenItem from './TokenItem';
-import ExchangeIcon from './ExchangeIcon';
 import './FundingSection.css';
-import { IoFilter } from 'react-icons/io5'; // Іконка для фільтра
-import { Tooltip } from 'react-tippy'; // Імпорт Tooltip для підказок
+import { IoFilter } from 'react-icons/io5';
+import { Tooltip } from 'react-tippy';
 import 'react-tippy/dist/tippy.css';
+import ExchangeCap from '../assets/cap/ExchangeCap.avif'; // Імпорт заглушки
 
 function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelectRate }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,8 +50,12 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
           if (entry.exchange && entry.funding_rate !== undefined && entry.funding_rate !== null) {
             const exchange = entry.exchange.toLowerCase();
             exchangeCounts.set(exchange, (exchangeCounts.get(exchange) || 0) + 1);
-            if (entry.exchange_logo && !logoMap.has(entry.exchange)) {
-              logoMap.set(entry.exchange, entry.exchange_logo);
+            if (entry.exchange_logo && !logoMap.has(exchange)) {
+              // Замінюємо blank.png на ExchangeCap
+              const logo = entry.exchange_logo === 'https://cdn.coinglasscdn.com/static/blank.png'
+                ? ExchangeCap
+                : entry.exchange_logo;
+              logoMap.set(exchange, logo); // ключ у нижньому регістрі
             }
           }
         });
@@ -62,10 +66,10 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
       .map(([exchange, count]) => ({
         key: exchange,
         displayName: exchange.charAt(0).toUpperCase() + exchange.slice(1),
-        logoUrl: logoMap.get(exchange.charAt(0).toUpperCase() + exchange.slice(1)) || null,
+        logoUrl: logoMap.get(exchange) || ExchangeCap, // ключ у нижньому регістрі
         activeCount: count,
       }))
-      .sort((a, b) => b.activeCount - a.activeExchangesCount);
+      .sort((a, b) => b.activeCount - a.activeCount);
   }, [fundingData, activeTab]);
 
   // Оптимізація для фільтрації та сортування токенів
@@ -80,13 +84,10 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
 
         if (!hasMarginList || !matchesSearch) return false;
 
-        // Фільтр за мінімальною ставкою, якщо увімкнено
-        // minFundingRate і funding_rate обидва в процентах (наприклад, 0.096 і -0.0082)
         const hasHighFundingRate = marginList.some(
           (entry) => entry.funding_rate !== undefined && entry.funding_rate !== null && Math.abs(entry.funding_rate) >= minFundingRate
         );
 
-        // Фільтр за знаком ставки, якщо увімкнено
         const matchesRateSign = marginList.some((entry) => {
           if (entry.funding_rate === undefined || entry.funding_rate === null) return false;
           if (!filtersEnabled.rateSign) return true;
@@ -96,7 +97,6 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
           return false;
         });
 
-        // Застосування фільтрів лише якщо вони увімкнені
         const minRateCondition = !filtersEnabled.minRate || hasHighFundingRate;
         const signCondition = matchesRateSign;
 
@@ -110,7 +110,6 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
             ).length
           : 0;
 
-        // Фільтрація бірж залежно від displayMode
         const filteredExchanges = displayMode === 'option2'
           ? availableExchanges
               .map((ex) => ({
@@ -128,7 +127,6 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
       .sort((a, b) => b.activeExchangesCount - a.activeExchangesCount);
   }, [fundingData, searchQuery, activeTab, minFundingRate, rateSignFilter, displayMode, filtersEnabled, availableExchanges]);
 
-  // Завантаження більше рядків при прокрутці
   const handleScroll = useCallback(
     (e) => {
       const { scrollTop, scrollHeight, clientHeight } = e.target;
@@ -139,12 +137,10 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
     [filteredTokens.length, visibleCount]
   );
 
-  // Скидаємо лічильник видимих рядків при зміні фільтра або вкладки
   useEffect(() => {
     setVisibleCount(50);
   }, [searchQuery, activeTab, minFundingRate, rateSignFilter, displayMode, filtersEnabled]);
 
-  // Оптимізація обробників подій
   const handleTokenClick = useCallback(
     (token) => {
       onSelectToken(token);
@@ -161,7 +157,6 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
 
   return (
     <section className="funding-section card">
-      {/* Заголовок і пошук */}
       <div className="funding-header">
         <h2 className="funding-title">
           Ставки фінансування
@@ -184,7 +179,6 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
             trigger="mouseenter"
             theme="light"
             arrow
-            data-theme="light" // Передача теми для стилів
           >
             <button
               className="filter-button"
@@ -196,7 +190,6 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
         </div>
       </div>
 
-      {/* Панель фільтрів */}
       {showFilters && (
         <div className="filter-panel">
           <div className="filter-group">
@@ -254,7 +247,6 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
         </div>
       )}
 
-      {/* Вкладки */}
       <div className="funding-tabs">
         <Tooltip
           title="Показати ставки для Stablecoin Margin"
@@ -262,7 +254,6 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
           trigger="mouseenter"
           theme="light"
           arrow
-          data-theme="light"
         >
           <button
             onClick={() => setActiveTab('stablecoin')}
@@ -277,7 +268,6 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
           trigger="mouseenter"
           theme="light"
           arrow
-          data-theme="light"
         >
           <button
             onClick={() => setActiveTab('token')}
@@ -288,10 +278,8 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
         </Tooltip>
       </div>
 
-      {/* Інформація про кількість токенів */}
       <div className="funding-info">Знайдено токенів: {filteredTokens.length}</div>
 
-      {/* Помилка або таблиця */}
       {error ? (
         <div className="funding-error">
           <div className="error-message">{error}</div>
@@ -309,8 +297,10 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
                 {availableExchanges.length > 0 ? (
                   availableExchanges.map((ex) => (
                     <th key={ex.key} className="exchange-header">
-                      <ExchangeIcon exchange={ex.displayName} size={20} logoUrl={ex.logoUrl} />
-                      <span>{ex.displayName}</span>
+                      <span className="exchange-header-content">
+                        <img src={ex.logoUrl} alt={`${ex.displayName} logo`} className="exchange-header-logo" />
+                        <span className="exchange-header-name">{ex.displayName}</span>
+                      </span>
                     </th>
                   ))
                 ) : (

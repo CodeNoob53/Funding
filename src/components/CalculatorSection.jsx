@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import CalculatorForm from './CalculatorForm';
 import CalculationResults from './CalculationResults';
-import ExchangeIcon from './ExchangeIcon';
 import './CalculatorSection.css';
 
 function CalculatorSection({ selectedToken }) {
@@ -154,7 +153,24 @@ function CalculatorSection({ selectedToken }) {
           <div className="exchange-details">
             <span className="exchange-label">Вибрана біржа:</span>
             <div className="exchange-content">
-              <ExchangeIcon exchange={selectedExchange} size={18} />
+              {/* Замість ExchangeIcon використовуйте <img> */}
+              {(() => {
+                // Знаходимо логотип біржі
+                let logoUrl = null;
+                if (selectedToken && selectedToken.stablecoin_margin_list) {
+                  const found = selectedToken.stablecoin_margin_list.find(
+                    entry => entry.exchange?.toLowerCase() === selectedExchange.toLowerCase()
+                  );
+                  logoUrl = found?.exchange_logo || null;
+                }
+                return logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt={selectedExchange}
+                    style={{ width: 18, height: 18, marginRight: 6, verticalAlign: 'middle', borderRadius: 4 }}
+                  />
+                ) : null;
+              })()}
               <span className="exchange-name">{selectedExchange}</span>
             </div>
           </div>

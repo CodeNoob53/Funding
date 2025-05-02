@@ -1,9 +1,9 @@
 // src/components/TokenItem.jsx
 import PropTypes from 'prop-types';
 import { memo } from 'react';
-import CryptoIcon from './CryptoIcon';
 import './TokenItem.css';
 import dayjs from 'dayjs';
+import TokenCap from '../assets/cap/TokenCap.avif'; // Імпорт заглушки
 
 const TokenItem = memo(function TokenItem({ token, marginType, onClick, onRateClick }) {
   const formatRate = (rate) => {
@@ -49,15 +49,21 @@ const TokenItem = memo(function TokenItem({ token, marginType, onClick, onRateCl
       }, {})
     : {};
 
+  // Визначаємо джерело для іконки токена
+  const tokenLogoSrc = token.symbolLogo && token.symbolLogo !== 'https://cdn.coinglasscdn.com/static/blank.png'
+    ? token.symbolLogo
+    : TokenCap;
+
   return (
     <tr onClick={() => onClick(token)} className="token-row">
       <td className="token-cell">
         <div className="token-info">
-          {token.symbolLogo ? (
-            <img src={token.symbolLogo} alt={token.symbol} className="token-icon" />
-          ) : (
-            <CryptoIcon symbol={token.symbol} size={4} />
-          )}
+          <img
+            src={tokenLogoSrc}
+            alt={token.symbol}
+            className="token-icon"
+            onError={(e) => (e.target.src = TokenCap)} // Заглушка при помилці
+          />
           <span>{token.symbol}</span>
         </div>
       </td>
