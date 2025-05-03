@@ -1,4 +1,3 @@
-// src/components/FundingSection.jsx
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import TokenItem from './TokenItem';
@@ -6,7 +5,7 @@ import './FundingSection.css';
 import { IoFilter } from 'react-icons/io5';
 import { Tooltip } from 'react-tippy';
 import 'react-tippy/dist/tippy.css';
-import ExchangeCap from '../assets/cap/ExchangeCap.avif'; // Імпорт заглушки
+import ExchangeCap from '../assets/cap/ExchangeCap.avif';
 
 function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelectRate }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,21 +21,17 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
   const [displayMode, setDisplayMode] = useState(() => {
     return localStorage.getItem('displayMode') || 'option1';
   });
-  const [filtersEnabled, setFiltersEnabled] = useState({
-    minRate: localStorage.getItem('filterMinRateEnabled') === 'true' || true,
-    rateSign: localStorage.getItem('filterRateSignEnabled') === 'true' || true,
+  const [filtersEnabled, setFiltersEnabled] = useState(() => {
+    return localStorage.getItem('filtersEnabled') === 'true' || false;
   });
 
-  // Збереження налаштувань у localStorage
   useEffect(() => {
     localStorage.setItem('minFundingRate', minFundingRate);
     localStorage.setItem('rateSignFilter', rateSignFilter);
     localStorage.setItem('displayMode', displayMode);
-    localStorage.setItem('filterMinRateEnabled', filtersEnabled.minRate);
-    localStorage.setItem('filterRateSignEnabled', filtersEnabled.rateSign);
+    localStorage.setItem('filtersEnabled', filtersEnabled);
   }, [minFundingRate, rateSignFilter, displayMode, filtersEnabled]);
 
-  // Оптимізація для обчислення доступних бірж з сортуванням
   const availableExchanges = useMemo(() => {
     if (!fundingData?.length) return [];
 
@@ -49,13 +44,24 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
         list.forEach((entry) => {
           if (entry.exchange && entry.funding_rate !== undefined && entry.funding_rate !== null) {
             const exchange = entry.exchange.toLowerCase();
-            exchangeCounts.set(exchange, (exchangeCounts.get(exchange) || 0) + 1);
-            if (entry.exchange_logo && !logoMap.has(exchange)) {
-              // Замінюємо blank.png на ExchangeCap
-              const logo = entry.exchange_logo === 'https://cdn.coinglasscdn.com/static/blank.png'
-                ? ExchangeCap
-                : entry.exchange_logo;
-              logoMap.set(exchange, logo); // ключ у нижньому регістрі
+            let shouldCount = true;
+
+            if (filtersEnabled) {
+              const meetsMinRate = Math.abs(entry.funding_rate) >= minFundingRate;
+              const meetsRateSign = rateSignFilter === 'all' ||
+                (rateSignFilter === 'long' && entry.funding_rate > 0) ||
+                (rateSignFilter === 'short' && entry.funding_rate < 0);
+              shouldCount = meetsMinRate && meetsRateSign;
+            }
+
+            if (shouldCount) {
+              exchangeCounts.set(exchange, (exchangeCounts.get(exchange) || 0) + 1);
+              if (entry.exchange_logo && !logoMap.has(exchange)) {
+                const logo = entry.exchange_logo === 'https://cdn.coinglasscdn.com/static/blank.png'
+                  ? ExchangeCap
+                  : entry.exchange_logo;
+                logoMap.set(exchange, logo);
+              }
             }
           }
         });
@@ -66,66 +72,72 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
       .map(([exchange, count]) => ({
         key: exchange,
         displayName: exchange.charAt(0).toUpperCase() + exchange.slice(1),
-        logoUrl: logoMap.get(exchange) || ExchangeCap, // ключ у нижньому регістрі
+        logoUrl: logoMap.get(exchange) || ExchangeCap,
         activeCount: count,
       }))
-      .sort((a, b) => b.activeCount - a.activeCount);
-  }, [fundingData, activeTab]);
+      .sort((a, b) => b.activeCount - a.activeCount)
+      .filter(ex => ex.activeCount > 0);
+  }, [fundingData, activeTab, minFundingRate, rateSignFilter, filtersEnabled]);
 
-  // Оптимізація для фільтрації та сортування токенів
   const filteredTokens = useMemo(() => {
     if (!fundingData?.length) return [];
-
+  
     return fundingData
       .filter((token) => {
         const matchesSearch = token.symbol?.toLowerCase().includes(searchQuery.toLowerCase()) || !searchQuery;
         const marginList = activeTab === 'stablecoin' ? token.stablecoin_margin_list : token.token_margin_list;
         const hasMarginList = Array.isArray(marginList) && marginList.length > 0;
-
+  
         if (!hasMarginList || !matchesSearch) return false;
-
-        const hasHighFundingRate = marginList.some(
-          (entry) => entry.funding_rate !== undefined && entry.funding_rate !== null && Math.abs(entry.funding_rate) >= minFundingRate
-        );
-
-        const matchesRateSign = marginList.some((entry) => {
-          if (entry.funding_rate === undefined || entry.funding_rate === null) return false;
-          if (!filtersEnabled.rateSign) return true;
-          if (rateSignFilter === 'all') return true;
-          if (rateSignFilter === 'positive') return entry.funding_rate > 0;
-          if (rateSignFilter === 'negative') return entry.funding_rate < 0;
-          return false;
+        if (!filtersEnabled) return true;
+  
+        // apply rateSignFilter before checking minFundingRate
+        const filteredBySign = marginList.filter((entry) => {
+          const rate = entry.funding_rate;
+          if (rate === undefined || rate === null) return false;
+  
+          return (
+            rateSignFilter === 'all' ||
+            (rateSignFilter === 'long' && rate > 0) ||
+            (rateSignFilter === 'short' && rate < 0)
+          );
         });
-
-        const minRateCondition = !filtersEnabled.minRate || hasHighFundingRate;
-        const signCondition = matchesRateSign;
-
-        return minRateCondition && signCondition;
+  
+        return filteredBySign.some(entry => Math.abs(entry.funding_rate) >= minFundingRate);
       })
       .map((token) => {
         const marginList = activeTab === 'stablecoin' ? token.stablecoin_margin_list : token.token_margin_list;
-        const activeExchangesCount = Array.isArray(marginList)
-          ? marginList.filter(
-              (entry) => entry.funding_rate !== undefined && entry.funding_rate !== null
-            ).length
-          : 0;
-
-        const filteredExchanges = displayMode === 'option2'
-          ? availableExchanges
-              .map((ex) => ({
-                ...ex,
-                data: marginList.find((entry) => entry.exchange?.toLowerCase() === ex.key),
-              }))
-              .filter((ex) => ex.data && Math.abs(ex.data.funding_rate) >= minFundingRate)
-          : availableExchanges.map((ex) => ({
-              ...ex,
-              data: marginList.find((entry) => entry.exchange?.toLowerCase() === ex.key),
-            }));
-
-        return { ...token, activeExchangesCount, filteredExchanges };
+  
+        const filteredExchanges = availableExchanges
+          .map((ex) => {
+            const entry = marginList.find((e) => e.exchange?.toLowerCase() === ex.key);
+            if (!entry || entry.funding_rate == null) return null;
+  
+            const meetsRateSign =
+              rateSignFilter === 'all' ||
+              (rateSignFilter === 'long' && entry.funding_rate > 0) ||
+              (rateSignFilter === 'short' && entry.funding_rate < 0);
+  
+            if (!meetsRateSign) return null;
+  
+            if (displayMode === 'option2') {
+              const meetsMinRate = Math.abs(entry.funding_rate) >= minFundingRate;
+              if (!meetsMinRate) return null;
+            }
+  
+            return { ...ex, data: entry };
+          })
+          .filter(Boolean);
+  
+        return {
+          ...token,
+          filteredExchanges,
+          activeExchangesCount: filteredExchanges.length,
+        };
       })
-      .sort((a, b) => b.activeExchangesCount - a.activeExchangesCount);
-  }, [fundingData, searchQuery, activeTab, minFundingRate, rateSignFilter, displayMode, filtersEnabled, availableExchanges]);
+      .filter((token) => token.filteredExchanges.length > 0)
+      .sort((a, b) => b.filteredExchanges.length - a.filteredExchanges.length);
+  }, [fundingData, searchQuery, activeTab, minFundingRate, rateSignFilter, filtersEnabled, availableExchanges, displayMode]);  
 
   const handleScroll = useCallback(
     (e) => {
@@ -139,7 +151,7 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
 
   useEffect(() => {
     setVisibleCount(50);
-  }, [searchQuery, activeTab, minFundingRate, rateSignFilter, displayMode, filtersEnabled]);
+  }, [searchQuery, activeTab, minFundingRate, rateSignFilter, filtersEnabled]);
 
   const handleTokenClick = useCallback(
     (token) => {
@@ -173,79 +185,8 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
             />
             <span className="search-icon"></span>
           </div>
-          <Tooltip
-            title="Відкрити налаштування фільтрів"
-            position="top"
-            trigger="mouseenter"
-            theme="light"
-            arrow
-          >
-            <button
-              className="filter-button"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              <IoFilter size={20} />
-            </button>
-          </Tooltip>
         </div>
       </div>
-
-      {showFilters && (
-        <div className="filter-panel">
-          <div className="filter-group">
-            <label>
-              <input
-                type="checkbox"
-                checked={filtersEnabled.minRate}
-                onChange={(e) => setFiltersEnabled((prev) => ({ ...prev, minRate: e.target.checked }))}
-              />
-              Фільтр за мінімальною ставкою (наприклад, 0.096 = 0.096%)
-            </label>
-            <input
-              type="number"
-              value={minFundingRate}
-              onChange={(e) => setMinFundingRate(parseFloat(e.target.value) || 0)}
-              step="0.01"
-              min="0"
-              className="filter-input"
-              disabled={!filtersEnabled.minRate}
-            />
-          </div>
-          <div className="filter-group">
-            <label>
-              <input
-                type="checkbox"
-                checked={filtersEnabled.rateSign}
-                onChange={(e) => setFiltersEnabled((prev) => ({ ...prev, rateSign: e.target.checked }))}
-              />
-              Фільтр за типом ставки
-            </label>
-            <select
-              value={rateSignFilter}
-              onChange={(e) => setRateSignFilter(e.target.value)}
-              className="filter-select"
-              disabled={!filtersEnabled.rateSign}
-            >
-              <option value="all">Всі</option>
-              <option value="positive">Позитивні</option>
-              <option value="negative">Негативні</option>
-            </select>
-          </div>
-          <div className="filter-group">
-            <label>
-              Режим відображення:
-              <select
-                value={displayMode}
-                onChange={(e) => setDisplayMode(e.target.value)}
-                className="filter-select"
-              >
-                <option value="option1">Всі біржі (якщо ≥ на одній)</option>
-                <option value="option2">Тільки біржі ≥ значення</option>
-              </select>
-            </label>
-          </div>
-        </div>
-      )}
 
       <div className="funding-tabs">
         <Tooltip
@@ -276,7 +217,96 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
             Token Margin
           </button>
         </Tooltip>
+        <Tooltip
+          title="Відкрити налаштування фільтрів"
+          position="top"
+          trigger="mouseenter"
+          theme="light"
+          arrow
+        >
+          <button
+            className="filter-button"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <IoFilter size={20} />
+          </button>
+        </Tooltip>
       </div>
+
+      {showFilters && (
+        <div className="filter-panel">
+          <div className="filter-group">
+            <label>
+              Minimum Funding Rate
+              <div className="radio-group">
+                <label>
+                  <input
+                    type="radio"
+                    name="filtersEnabled"
+                    value="off"
+                    checked={!filtersEnabled}
+                    onChange={() => setFiltersEnabled(false)}
+                  />
+                  Off
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="filtersEnabled"
+                    value="on"
+                    checked={filtersEnabled}
+                    onChange={() => setFiltersEnabled(true)}
+                  />
+                  On
+                </label>
+              </div>
+            </label>
+          </div>
+          <div className="filter-group">
+            <label>
+              Фільтр за мінімальною ставкою (наприклад, 0.096 = 0.096%)
+            </label>
+            <input
+              type="number"
+              value={minFundingRate}
+              onChange={(e) => setMinFundingRate(parseFloat(e.target.value) || 0)}
+              step="0.01"
+              min="0"
+              className="filter-input"
+              disabled={!filtersEnabled}
+            />
+          </div>
+          <div className="filter-group">
+            <label>
+              Фільтр за типом ставки
+            </label>
+            <select
+              value={rateSignFilter}
+              onChange={(e) => setRateSignFilter(e.target.value)}
+              className="filter-select"
+              disabled={!filtersEnabled}
+            >
+              <option value="all">усі</option>
+              <option value="long">long</option>
+              <option value="short">short</option>
+            </select>
+          </div>
+          <div className="filter-group">
+            <label>
+              Режим відображення:
+              <select
+                value={displayMode}
+                onChange={(e) => setDisplayMode(e.target.value)}
+                className="filter-select filter-select-wide"
+                disabled={!filtersEnabled}
+              >
+                <option value="option1">Всі біржі (якщо ≥ на одній)</option>
+                <option value="option2">Тільки біржі ≥ значення</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      )}
 
       <div className="funding-info">Знайдено токенів: {filteredTokens.length}</div>
 

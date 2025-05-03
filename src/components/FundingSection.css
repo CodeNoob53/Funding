@@ -88,6 +88,7 @@
     border-bottom: 2px solid rgb(var(--border));
     padding: 0;
     background: transparent;
+    align-items: center;
 }
 
 .tab-button {
@@ -123,7 +124,7 @@
 .funding-info {
     font-size: 0.875rem;
     color: rgb(var(--foreground-secondary));
-    margin-bottom: var(--spacing-4);
+    margin-top: var(--spacing-4);
 }
 
 /* Помилка */
@@ -225,7 +226,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: var(--spacing-3); /* Збільшено gap для кращого вирівнювання */
+    gap: var(--spacing-3);
     background: linear-gradient(
       135deg,
       rgba(var(--card), 0.98),
@@ -245,9 +246,8 @@
     transform: translateY(-2px);
 }
 
-
 .exchange-header img[src$="ExchangeCap.avif"] {
-    opacity: 0.8; /* Легка прозорість для заглушки */
+    opacity: 0.8;
 }
 
 .exchange-header:hover img {
@@ -284,7 +284,6 @@
   display: block;
   box-shadow: var(--shadow-sm);
   transition: transform 0.3s ease;
-
 }
 
 .exchange-header-name {
@@ -335,7 +334,6 @@
         font-size: 2rem;
     }
 
-
     .coin-header {
         width: 220px;
     }
@@ -345,7 +343,7 @@
     }
 
     .exchange-header span {
-        font-size: 0.8rem; /* Трішки більший шрифт */
+        font-size: 0.8rem;
     }
 }
 
@@ -359,7 +357,7 @@
     }
 
     .exchange-header img {
-        width: 16px; /* Менший розмір для мобільних */
+        width: 16px;
         height: 16px;
     }
 
@@ -435,7 +433,19 @@
     font-weight: 500;
 }
 
-.filter-group input[type="checkbox"] {
+.radio-group {
+    display: flex;
+    gap: var(--spacing-2);
+    margin-left: var(--spacing-2);
+}
+
+.radio-group label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+}
+
+.filter-group input[type="radio"] {
     width: var(--spacing-4);
     height: var(--spacing-4);
     accent-color: rgb(var(--primary));
@@ -443,11 +453,11 @@
     transition: transform 0.2s ease;
 }
 
-.filter-group input[type="checkbox"]:hover {
+.filter-group input[type="radio"]:hover {
     transform: scale(1.1);
 }
 
-.filter-group input[type="checkbox"]:disabled {
+.filter-group input[type="radio"]:disabled {
     cursor: not-allowed;
     opacity: 0.6;
 }
@@ -489,6 +499,10 @@
     background-size: 12px;
 }
 
+.filter-select-wide {
+    width: 250px;
+}
+
 @media (max-width: 768px) {
     .filter-panel {
         flex-direction: column;
@@ -501,6 +515,10 @@
 
     .filter-input,
     .filter-select {
+        width: 100%;
+    }
+
+    .filter-select-wide {
         width: 100%;
     }
 }
