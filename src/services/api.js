@@ -7,11 +7,13 @@ const isProduction = import.meta.env.PROD;
 const isLocalDev = import.meta.env.DEV;
 
 // Для продакшн використовуємо локальний проксі
-const API_URL = isProduction 
-  ? '/api/proxy' 
-  : isLocalDev 
-    ? 'http://localhost:3001/api/proxy'
-    : '/api/proxy';
+const API_URL = isProduction && import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL
+  : isProduction 
+    ? '/api/proxy' 
+    : isLocalDev 
+      ? 'http://localhost:3001/api/proxy'
+      : '/api/proxy';
 
 // Ендпоінти API
 const ENDPOINTS = {
