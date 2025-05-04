@@ -1,4 +1,4 @@
-// src/services/api.js - оновлюємо імпорти та ендпоінти
+// src/services/api.js
 import axios from 'axios';
 import logger from './logger';
 
@@ -15,8 +15,8 @@ const API_URL = isProduction
 
 // Ендпоінти API
 const ENDPOINTS = {
-  // Нові розширені ставки фандингу
-  FUNDING_RATES_EXTENDED: "/funding-rates-extended",
+  // Ставки фандингу (узгоджено з сервером)
+  FUNDING_RATES: "/funding-rates",
   
   // Ринкові дані для ф'ючерсних монет
   COINS_MARKETS: "/coins-markets",
@@ -29,7 +29,7 @@ const ENDPOINTS = {
 const fundingDataCache = {
   data: null,
   timestamp: null,
-  expiryTime: 5 * 60 * 1000 // 5 хвилин в мілісекундах
+  expiryTime: 20000 // 20 секунд у мілісекундах
 };
 
 /**
@@ -45,14 +45,23 @@ export const fetchFundingRates = async () => {
     return fundingDataCache.data;
   }
   
-  const endpoint = ENDPOINTS.FUNDING_RATES_EXTENDED;
+  const endpoint = ENDPOINTS.FUNDING_RATES;
   const url = `${API_URL}${endpoint}`;
   
   try {
     logger.debug(`Запит розширених фандинг ставок з ${url}`);
     const startTime = performance.now();
     
-    const response = await axios.get(url);
+    const apiKey = import.meta.env.VITE_S_API_KEY;
+    if (!apiKey) {
+      throw new Error('API Key не визначено. Встановіть VITE_S_API_KEY у .env');
+    }
+
+    const headers = {
+      's_api_key': apiKey, // Узгоджено з сервером
+    };
+
+    const response = await axios.get(url, { headers });
     
     const endTime = performance.now();
     logger.debug(`Відповідь отримана за ${(endTime - startTime).toFixed(2)}ms`);
@@ -189,6 +198,3 @@ const formatExtendedFundingData = (responseData) => {
     throw new Error(`Помилка форматування даних: ${error.message}`);
   }
 };
-
-
-// Інші функції залишаються без змін

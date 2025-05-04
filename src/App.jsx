@@ -7,6 +7,7 @@ import Footer from './components/Footer';
 import { fetchFundingRates } from './services/api';
 import useThemeStore from './store/themeStore';
 import logger from './services/logger';
+import socketService from './services/socketService';
 import './App.css';
 
 const APP_VERSION = import.meta.env.VITE_APP_VERSION || '0.2.0';
@@ -28,7 +29,7 @@ function App() {
       platform: navigator.platform,
       screenSize: `${window.innerWidth}x${window.innerHeight}`
     });
-  }, []);
+  }, [error]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -56,16 +57,26 @@ function App() {
     };
 
     loadFundingData();
-    const intervalId = setInterval(() => {
-      logger.debug('Запуск періодичного оновлення даних фандингу');
-      loadFundingData();
-    }, 15 * 60 * 1000);
+    const intervalId = setInterval(async () => {
+      if (!error) {
+        await loadFundingData();
+      } else {
+        logger.debug('Пропускаємо оновлення через попередню помилку');
+      }
+    }, 20 * 1000);
+
+    socketService.connect();
+    socketService.on('dataUpdate', (data) => {
+      logger.info('Оновлення даних через WebSocket', data);
+      setFundingData(data);
+    });
 
     return () => {
       logger.debug('Очищення інтервалу оновлення даних');
       clearInterval(intervalId);
+      socketService.disconnect();
     };
-  }, []);
+  }, [error]);
 
   const handleSelectToken = (token) => {
     setSelectedToken(token);
