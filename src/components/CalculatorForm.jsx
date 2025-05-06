@@ -1,8 +1,20 @@
 import PropTypes from 'prop-types';
 import { FiBriefcase, FiDollarSign, FiPercent, FiTrendingUp, FiCreditCard } from 'react-icons/fi';
+import { TbTriangleFilled, TbTriangleInvertedFilled } from 'react-icons/tb';
 import './CalculatorForm.css';
 
 function CalculatorForm({ formValues, positionType, setPositionType, onChange, onSubmit }) {
+  const handleSpinnerClick = (id, direction) => {
+    const input = document.getElementById(id);
+    if (input) {
+      const step = parseFloat(input.step) || 0.01;
+      const currentValue = parseFloat(input.value) || 0;
+      const newValue = direction === 'up' ? currentValue + step : currentValue - step;
+      input.value = newValue.toFixed(step.toString().split('.')[1]?.length || 2);
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  };
+
   return (
     <form className="calculator-form" onSubmit={onSubmit}>
       {/* Перемикач Long/Short */}
@@ -11,17 +23,18 @@ function CalculatorForm({ formValues, positionType, setPositionType, onChange, o
           <button
             type="button"
             onClick={() => setPositionType('long')}
-            className={`toggle-button ${positionType === 'long' ? 'toggle-button-active' : 'toggle-button-inactive'}`}
+            className={`toggle-button toggle-button-long ${positionType === 'long' ? 'toggle-button-active' : 'toggle-button-inactive'}`}
           >
             Long
           </button>
           <button
             type="button"
             onClick={() => setPositionType('short')}
-            className={`toggle-button ${positionType === 'short' ? 'toggle-button-active' : 'toggle-button-inactive'}`}
+            className={`toggle-button toggle-button-short ${positionType === 'short' ? 'toggle-button-active' : 'toggle-button-inactive'}`}
           >
             Short
           </button>
+          <div className="toggle-slider" />
         </div>
       </div>
 
@@ -32,18 +45,34 @@ function CalculatorForm({ formValues, positionType, setPositionType, onChange, o
             Ціна відкриття ($):
           </label>
           <div className="input-wrapper">
-            <div className="input-icon">
-              <FiDollarSign size={16} />
-            </div>
             <input
               type="number"
               id="entryPrice"
               step="0.01"
               required
-              className="form-input"
+              className={`form-input ${formValues.entryPrice ? 'form-input--auto' : ''}`}
               value={formValues.entryPrice}
               onChange={onChange}
             />
+            <div className="input-icon">
+              <FiDollarSign size={18} />
+            </div>
+            <div className="spinner-wrapper">
+              <button
+                type="button"
+                className="spinner-button"
+                onClick={() => handleSpinnerClick('entryPrice', 'up')}
+              >
+                <TbTriangleFilled size={12} />
+              </button>
+              <button
+                type="button"
+                className="spinner-button"
+                onClick={() => handleSpinnerClick('entryPrice', 'down')}
+              >
+                <TbTriangleInvertedFilled size={12} />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -52,18 +81,34 @@ function CalculatorForm({ formValues, positionType, setPositionType, onChange, o
             Плече:
           </label>
           <div className="input-wrapper">
-            <div className="input-icon">
-              <FiTrendingUp size={16} />
-            </div>
             <input
               type="number"
               id="leverage"
-              step="0.1"
+              step="1"
               required
               className="form-input"
               value={formValues.leverage}
               onChange={onChange}
             />
+            <div className="input-icon">
+              <FiTrendingUp size={18} />
+            </div>
+            <div className="spinner-wrapper">
+              <button
+                type="button"
+                className="spinner-button"
+                onClick={() => handleSpinnerClick('leverage', 'up')}
+              >
+                <TbTriangleFilled size={12} />
+              </button>
+              <button
+                type="button"
+                className="spinner-button"
+                onClick={() => handleSpinnerClick('leverage', 'down')}
+              >
+                <TbTriangleInvertedFilled size={12} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -74,9 +119,6 @@ function CalculatorForm({ formValues, positionType, setPositionType, onChange, o
           Розмір позиції ($):
         </label>
         <div className="input-wrapper">
-          <div className="input-icon">
-            <FiBriefcase size={16} />
-          </div>
           <input
             type="number"
             id="positionSize"
@@ -86,6 +128,25 @@ function CalculatorForm({ formValues, positionType, setPositionType, onChange, o
             value={formValues.positionSize}
             onChange={onChange}
           />
+          <div className="input-icon">
+            <FiBriefcase size={18} />
+          </div>
+          <div className="spinner-wrapper">
+            <button
+              type="button"
+              className="spinner-button"
+              onClick={() => handleSpinnerClick('positionSize', 'up')}
+            >
+              <TbTriangleFilled size={12} />
+            </button>
+            <button
+              type="button"
+              className="spinner-button"
+              onClick={() => handleSpinnerClick('positionSize', 'down')}
+            >
+              <TbTriangleInvertedFilled size={12} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -96,9 +157,6 @@ function CalculatorForm({ formValues, positionType, setPositionType, onChange, o
             Комісія відкриття (%):
           </label>
           <div className="input-wrapper">
-            <div className="input-icon">
-              <FiCreditCard size={16} />
-            </div>
             <input
               type="number"
               id="openFee"
@@ -107,6 +165,25 @@ function CalculatorForm({ formValues, positionType, setPositionType, onChange, o
               value={formValues.openFee}
               onChange={onChange}
             />
+            <div className="input-icon">
+              <FiCreditCard size={18} />
+            </div>
+            <div className="spinner-wrapper">
+              <button
+                type="button"
+                className="spinner-button"
+                onClick={() => handleSpinnerClick('openFee', 'up')}
+              >
+                <TbTriangleFilled size={12} />
+              </button>
+              <button
+                type="button"
+                className="spinner-button"
+                onClick={() => handleSpinnerClick('openFee', 'down')}
+              >
+                <TbTriangleInvertedFilled size={12} />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -115,9 +192,6 @@ function CalculatorForm({ formValues, positionType, setPositionType, onChange, o
             Комісія закриття (%):
           </label>
           <div className="input-wrapper">
-            <div className="input-icon">
-              <FiCreditCard size={16} />
-            </div>
             <input
               type="number"
               id="closeFee"
@@ -126,6 +200,25 @@ function CalculatorForm({ formValues, positionType, setPositionType, onChange, o
               value={formValues.closeFee}
               onChange={onChange}
             />
+            <div className="input-icon">
+              <FiCreditCard size={18} />
+            </div>
+            <div className="spinner-wrapper">
+              <button
+                type="button"
+                className="spinner-button"
+                onClick={() => handleSpinnerClick('closeFee', 'up')}
+              >
+                <TbTriangleFilled size={12} />
+              </button>
+              <button
+                type="button"
+                className="spinner-button"
+                onClick={() => handleSpinnerClick('closeFee', 'down')}
+              >
+                <TbTriangleInvertedFilled size={12} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -136,18 +229,34 @@ function CalculatorForm({ formValues, positionType, setPositionType, onChange, o
           Ставка фандингу (% за 8 годин):
         </label>
         <div className="input-wrapper">
-          <div className="input-icon">
-            <FiPercent size={16} />
-          </div>
           <input
             type="number"
             id="fundingRate"
             step="0.001"
             required
-            className="form-input"
+            className={`form-input ${formValues.fundingRate ? 'form-input--auto' : ''}`}
             value={formValues.fundingRate}
             onChange={onChange}
           />
+          <div className="input-icon">
+            <FiPercent size={18} />
+          </div>
+          <div className="spinner-wrapper">
+            <button
+              type="button"
+              className="spinner-button"
+              onClick={() => handleSpinnerClick('fundingRate', 'up')}
+            >
+              <TbTriangleFilled size={12} />
+            </button>
+            <button
+              type="button"
+              className="spinner-button"
+              onClick={() => handleSpinnerClick('fundingRate', 'down')}
+            >
+              <TbTriangleInvertedFilled size={12} />
+            </button>
+          </div>
         </div>
       </div>
 
