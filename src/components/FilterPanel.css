@@ -1,207 +1,213 @@
 /* src/components/FilterPanel.css */
-
 /* #region Filter Panel */
 .filter-panel {
-    display: flex;
-    flex-direction: column;
-    min-width: 350px;
-    max-width: 450px;
-    height: calc(100vh - 72px - 96px); /* Висота між header (72px) і footer (96px) */
-    background: linear-gradient(135deg, rgba(var(--card), 0.95), rgba(var(--card), 0.85));
-    border-left: 1px solid rgb(var(--border));
-    padding: var(--spacing-4);
-    box-shadow: var(--shadow-sm);
-    animation: slideInRight 0.3s ease-out;
-    position: fixed;
-    right: 0;
-    top: 72px; /* Висота header */
-    z-index: 20;
-    overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 350px;
+  max-width: 450px;
+  background: linear-gradient(
+    135deg,
+    rgba(var(--card), 0.95),
+    rgba(var(--card), 0.85)
+  );
+  border-left: 1px solid rgb(var(--border));
+  padding: var(--spacing-4);
+  box-shadow: var(--shadow-sm);
+  animation: slideInRight 0.3s ease-out;
+  position: fixed;
+  right: 0;
+  top: var(--header-height, 72px); /* Висота хедера */
+  height: calc(
+    100vh - var(--header-height, 72px) - var(--footer-height, 96px)
+  ); /* Висота між хедером і футером */
+  z-index: 90;
+  overflow-y: auto;
+}
+
+.filter-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-4);
+}
+
+.filter-panel-header h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: rgb(var(--foreground));
+}
+
+.filter-close-button {
+  background: rgb(var(--primary));
+  border: none;
+  font-size: 1rem;
+  color: rgb(var(--primary-foreground));
+  cursor: pointer;
+  padding: var(--spacing-2);
+  border-radius: var(--border-radius-sm);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.filter-close-button:hover {
+  background: rgba(var(--primary), 0.8);
+  transform: scale(1.1);
+}
+/* #endregion */
+
+/* #region Filter Group */
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-4);
+}
+
+.filter-group label {
+  color: rgb(var(--foreground));
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.radio-group {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+.filter-group input[type="radio"] {
+  width: var(--spacing-4);
+  height: var(--spacing-4);
+  accent-color: rgb(var(--primary));
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.filter-group input[type="radio"]:hover {
+  transform: scale(1.1);
+}
+
+.filter-group input[type="radio"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+/* #endregion */
+
+/* #region Filter Inputs */
+.filter-input,
+.filter-select {
+  padding: var(--spacing-2) var(--spacing-3);
+  border: 1px solid rgb(var(--border));
+  border-radius: var(--border-radius-sm);
+  background: rgb(var(--background));
+  color: rgb(var(--foreground));
+  font-size: 0.875rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.filter-input:focus,
+.filter-select:focus {
+  outline: none;
+  border-color: rgb(var(--primary));
+  box-shadow: 0 0 0 2px rgba(var(--primary), 0.3);
+}
+
+.filter-input:disabled,
+.filter-select:disabled {
+  background: rgba(var(--card), 0.5);
+  cursor: not-allowed;
+}
+
+.filter-input {
+  width: 100px;
+}
+
+.filter-select {
+  width: 150px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23686868' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--spacing-2) center;
+  background-size: 12px;
+}
+
+.filter-select-wide {
+  width: 200px;
+}
+/* #endregion */
+
+/* #region Exchange Checkboxes */
+.exchange-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  max-height: 200px;
+  overflow-y: auto;
+  padding: var(--spacing-2);
+  border: 1px solid rgb(var(--border));
+  border-radius: var(--border-radius-sm);
+}
+
+.exchange-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+.exchange-checkbox input[type="checkbox"] {
+  accent-color: rgb(var(--primary));
+  cursor: pointer;
+}
+
+.exchange-checkbox input[type="checkbox"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+/* #endregion */
+
+/* #region Animations */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
   }
-  
-  .filter-panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-4);
+  to {
+    transform: translateX(0);
   }
-  
-  .filter-panel-header h3 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: rgb(var(--foreground));
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
   }
-  
-  .filter-close-button {
-    background: rgb(var(--primary));
-    border: none;
-    font-size: 1rem;
-    color: rgb(var(--primary-foreground));
-    cursor: pointer;
-    padding: var(--spacing-2);
-    border-radius: var(--border-radius-sm);
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.3s ease, transform 0.2s ease;
+  to {
+    transform: translateX(100%);
   }
-  
-  .filter-close-button:hover {
-    background: rgba(var(--primary), 0.8);
-    transform: scale(1.1);
+}
+/* #endregion */
+
+/* #region Responsive */
+@media (max-width: 768px) {
+  .filter-panel {
+    min-width: 100%;
+    max-width: 100%;
+    top: 56px; /* менша висота хедера для мобільних */
+    bottom: 64px; /* менша висота футера для мобільних */
+    height: calc(100vh - 56px - 80px); /* Менші висоти для мобільних */
   }
-  /* #endregion */
-  
-  /* #region Filter Group */
-  .filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-2);
-    margin-bottom: var(--spacing-4);
-  }
-  
-  .filter-group label {
-    color: rgb(var(--foreground));
-    font-size: 0.875rem;
-    font-weight: 500;
-  }
-  
-  .radio-group {
-    display: flex;
-    gap: var(--spacing-2);
-  }
-  
-  .radio-group label {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-1);
-  }
-  
-  .filter-group input[type="radio"] {
-    width: var(--spacing-4);
-    height: var(--spacing-4);
-    accent-color: rgb(var(--primary));
-    cursor: pointer;
-    transition: transform 0.2s ease;
-  }
-  
-  .filter-group input[type="radio"]:hover {
-    transform: scale(1.1);
-  }
-  
-  .filter-group input[type="radio"]:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-  /* #endregion */
-  
-  /* #region Filter Inputs */
+
   .filter-input,
-  .filter-select {
-    padding: var(--spacing-2) var(--spacing-3);
-    border: 1px solid rgb(var(--border));
-    border-radius: var(--border-radius-sm);
-    background: rgb(var(--background));
-    color: rgb(var(--foreground));
-    font-size: 0.875rem;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  }
-  
-  .filter-input:focus,
-  .filter-select:focus {
-    outline: none;
-    border-color: rgb(var(--primary));
-    box-shadow: 0 0 0 2px rgba(var(--primary), 0.3);
-  }
-  
-  .filter-input:disabled,
-  .filter-select:disabled {
-    background: rgba(var(--card), 0.5);
-    cursor: not-allowed;
-  }
-  
-  .filter-input {
-    width: 100px;
-  }
-  
-  .filter-select {
-    width: 150px;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23686868' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right var(--spacing-2) center;
-    background-size: 12px;
-  }
-  
+  .filter-select,
   .filter-select-wide {
-    width: 200px;
+    width: 100%;
   }
-  /* #endregion */
-  
-  /* #region Exchange Checkboxes */
-  .exchange-checkboxes {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-2);
-    max-height: 200px;
-    overflow-y: auto;
-    padding: var(--spacing-2);
-    border: 1px solid rgb(var(--border));
-    border-radius: var(--border-radius-sm);
-  }
-  
-  .exchange-checkbox {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-1);
-  }
-  
-  .exchange-checkbox input[type="checkbox"] {
-    accent-color: rgb(var(--primary));
-    cursor: pointer;
-  }
-  
-  .exchange-checkbox input[type="checkbox"]:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-  /* #endregion */
-  
-  /* #region Animations */
-  @keyframes slideInRight {
-    from {
-      transform: translateX(100%);
-    }
-    to {
-      transform: translateX(0);
-    }
-  }
-  
-  @keyframes slideOutRight {
-    from {
-      transform: translateX(0);
-    }
-    to {
-      transform: translateX(100%);
-    }
-  }
-  /* #endregion */
-  
-  /* #region Responsive */
-  @media (max-width: 768px) {
-    .filter-panel {
-      min-width: 100%;
-      max-width: 100%;
-      height: calc(100vh - 56px - 80px); /* Менші висоти для мобільних */
-      top: 56px;
-    }
-  
-    .filter-input,
-    .filter-select,
-    .filter-select-wide {
-      width: 100%;
-    }
-  }
-  /* #endregion */
+}
+/* #endregion */

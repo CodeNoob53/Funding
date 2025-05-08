@@ -1,61 +1,64 @@
 /* src/components/Header.css */
 
 .header {
-    position: sticky;
-    top: 0;
-    background-color: rgba(var(--card), 0.95);
-    backdrop-filter: blur(8px);
-    border-bottom: 1px solid rgb(var(--border));
-    transition: all 0.3s ease;
-    z-index: 100;
-  }
-  
-  .header-scrolled {
-    box-shadow: var(--shadow-md);
-    background-color: rgba(var(--card), 1);
-  }
-  
-  .header-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--spacing-4) 0;
-  }
-  
+  position: sticky;
+  top: 0;
+  background-color: rgba(var(--card), 0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgb(var(--border));
+  transition: all 0.3s ease;
+  z-index: 100;
+  width: 100%;
+}
+
+/* Інші стилі залишаються без змін */
+
+.header-scrolled {
+  box-shadow: var(--shadow-md);
+  background-color: rgba(var(--card), 1);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-4) 0;
+}
+
+.header-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: rgb(var(--foreground));
+  letter-spacing: -0.02em;
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+.btn-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgb(var(--foreground));
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.btn-icon:hover {
+  background-color: rgba(var(--primary), 0.1);
+  color: rgb(var(--primary));
+}
+
+@media (max-width: 768px) {
   .header-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: rgb(var(--foreground));
-    letter-spacing: -0.02em;
+    font-size: 1.25rem;
   }
-  
-  .header-actions {
-    display: flex;
-    gap: var(--spacing-2);
-  }
-  
+
   .btn-icon {
-    width: 2.5rem;
-    height: 2.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: rgb(var(--foreground));
-    transition: background-color 0.2s, color 0.2s;
+    width: 2rem;
+    height: 2rem;
   }
-  
-  .btn-icon:hover {
-    background-color: rgba(var(--primary), 0.1);
-    color: rgb(var(--primary));
-  }
-  
-  @media (max-width: 768px) {
-    .header-title {
-      font-size: 1.25rem;
-    }
-    
-    .btn-icon {
-      width: 2rem;
-      height: 2rem;
-    }
-  }
+}

@@ -1,147 +1,91 @@
+// src/components/FundingSection.jsx
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import TokenItem from './TokenItem';
-import FilterPanel from './FilterPanel';
 import './FundingSection.css';
 import { IoFilter } from 'react-icons/io5';
 import { Tooltip } from 'react-tippy';
 import 'react-tippy/dist/tippy.css';
 import ExchangeCap from '../assets/cap/ExchangeCap.avif';
 
-function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelectRate }) {
+function FundingSection({ 
+  fundingData, 
+  isLoading, 
+  error, 
+  onSelectToken, 
+  onSelectRate,
+  onToggleFilters,
+  availableExchanges,
+  setAvailableExchanges,
+  filtersEnabled,
+  minFundingRate,
+  rateSignFilter,
+  displayMode,
+  fundingInterval,
+  statusFilter,
+  sortBy,
+  sortOrder,
+  exchangeSortBy,
+  exchangeSortOrder,
+  displayedExchanges
+}) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('stablecoin');
   const [visibleCount, setVisibleCount] = useState(50);
-  const [showFilters, setShowFilters] = useState(false);
-  const [sortBy, setSortBy] = useState(() => localStorage.getItem('sortBy') || 'exchanges');
-  const [sortOrder, setSortOrder] = useState(() => localStorage.getItem('sortOrder') || 'desc');
-  const [exchangeSortBy, setExchangeSortBy] = useState(() => localStorage.getItem('exchangeSortBy') || 'name');
-  const [exchangeSortOrder, setExchangeSortOrder] = useState(() => localStorage.getItem('exchangeSortOrder') || 'asc');
 
-  const availableExchanges = useMemo(() => {
-    if (!fundingData?.length) return {};
-
-    const exchangeMap = {};
-    fundingData.forEach((item) => {
-      const list = activeTab === 'stablecoin' ? item.stablecoin_margin_list : item.token_margin_list;
-      if (Array.isArray(list) && list.length > 0) {
-        list.forEach((entry) => {
-          if (entry.exchange && entry.funding_rate !== undefined && entry.funding_rate !== null) {
-            const exchange = entry.exchange.toLowerCase();
-            if (!exchangeMap[exchange]) {
-              exchangeMap[exchange] = {
-                displayName: exchange.charAt(0).toUpperCase() + exchange.slice(1),
-                logoUrl: entry.exchange_logo === 'https://cdn.coinglasscdn.com/static/blank.png' ? ExchangeCap : entry.exchange_logo,
-                activeCount: 0,
-                bestFR: entry.funding_rate,
-              };
+  // Оновлюємо доступні біржі при зміні даних
+  useEffect(() => {
+    const newAvailableExchanges = {};
+    
+    if (fundingData?.length) {
+      fundingData.forEach((item) => {
+        const list = activeTab === 'stablecoin' ? item.stablecoin_margin_list : item.token_margin_list;
+        if (Array.isArray(list) && list.length > 0) {
+          list.forEach((entry) => {
+            if (entry.exchange && entry.funding_rate !== undefined && entry.funding_rate !== null) {
+              const exchange = entry.exchange.toLowerCase();
+              if (!newAvailableExchanges[exchange]) {
+                newAvailableExchanges[exchange] = {
+                  displayName: exchange.charAt(0).toUpperCase() + exchange.slice(1),
+                  logoUrl: entry.exchange_logo === 'https://cdn.coinglasscdn.com/static/blank.png' ? ExchangeCap : entry.exchange_logo,
+                  activeCount: 0,
+                  bestFR: entry.funding_rate,
+                };
+              }
+              newAvailableExchanges[exchange].activeCount += 1;
+              newAvailableExchanges[exchange].bestFR = Math.max(Math.abs(newAvailableExchanges[exchange].bestFR || 0), Math.abs(entry.funding_rate));
             }
-            exchangeMap[exchange].activeCount += 1;
-            exchangeMap[exchange].bestFR = Math.max(Math.abs(exchangeMap[exchange].bestFR || 0), Math.abs(entry.funding_rate));
-          }
-        });
-      }
-    });
-
-    // Сортування бірж
-    const sortedExchanges = Object.keys(exchangeMap)
-      .map((key) => ({ key, ...exchangeMap[key] }))
-      .sort((a, b) => {
-        const multiplier = exchangeSortOrder === 'asc' ? 1 : -1;
-        if (exchangeSortBy === 'name') {
-          return multiplier * a.displayName.localeCompare(b.displayName);
-        } else if (exchangeSortBy === 'tokens') {
-          return multiplier * (a.activeCount - b.activeCount);
-        } else if (exchangeSortBy === 'bestFR') {
-          return multiplier * ((b.bestFR || 0) - (a.bestFR || 0));
-        }
-        return 0;
-      })
-      .reduce((acc, exchange) => {
-        acc[exchange.key] = {
-          displayName: exchange.displayName,
-          logoUrl: exchange.logoUrl,
-          activeCount: exchange.activeCount,
-          bestFR: exchange.bestFR,
-        };
-        return acc;
-      }, {});
-
-    return sortedExchanges;
-  }, [fundingData, activeTab, exchangeSortBy, exchangeSortOrder]);
-
-  const [displayedExchanges, setDisplayedExchanges] = useState(() => {
-    const saved = localStorage.getItem('displayedExchanges');
-    return saved ? JSON.parse(saved) : {};
-  });
-
-  const [minFundingRate, setMinFundingRate] = useState(() => {
-    return parseFloat(localStorage.getItem('minFundingRate')) || 0.15;
-  });
-  const [rateSignFilter, setRateSignFilter] = useState(() => {
-    return localStorage.getItem('rateSignFilter') || 'all';
-  });
-  const [displayMode, setDisplayMode] = useState(() => {
-    return localStorage.getItem('displayMode') || 'option1';
-  });
-  const [filtersEnabled, setFiltersEnabled] = useState(() => {
-    return localStorage.getItem('filtersEnabled') === 'true' || false;
-  });
-  const [fundingInterval, setFundingInterval] = useState(() => {
-    return localStorage.getItem('fundingInterval') || 'all';
-  });
-  const [statusFilter, setStatusFilter] = useState(() => {
-    return localStorage.getItem('statusFilter') || 'all';
-  });
-
-  // Обробка Esc для закриття панелі
-  useEffect(() => {
-    const handleEsc = (event) => {
-      if (event.key === 'Escape' && showFilters) {
-        setShowFilters(false);
-      }
-    };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [showFilters]);
-
-  useEffect(() => {
-    setDisplayedExchanges((prevDisplayedExchanges) => {
-      const newDisplayedExchanges = { ...prevDisplayedExchanges };
-      Object.keys(availableExchanges).forEach((key) => {
-        if (newDisplayedExchanges[key] === undefined) {
-          newDisplayedExchanges[key] = true;
+          });
         }
       });
-      return newDisplayedExchanges;
-    });
-  }, [availableExchanges]);
 
-  useEffect(() => {
-    localStorage.setItem('minFundingRate', minFundingRate);
-    localStorage.setItem('rateSignFilter', rateSignFilter);
-    localStorage.setItem('displayMode', displayMode);
-    localStorage.setItem('filtersEnabled', filtersEnabled);
-    localStorage.setItem('displayedExchanges', JSON.stringify(displayedExchanges));
-    localStorage.setItem('fundingInterval', fundingInterval);
-    localStorage.setItem('statusFilter', statusFilter);
-    localStorage.setItem('sortBy', sortBy);
-    localStorage.setItem('sortOrder', sortOrder);
-    localStorage.setItem('exchangeSortBy', exchangeSortBy);
-    localStorage.setItem('exchangeSortOrder', exchangeSortOrder);
-  }, [
-    minFundingRate,
-    rateSignFilter,
-    displayMode,
-    filtersEnabled,
-    displayedExchanges,
-    fundingInterval,
-    statusFilter,
-    sortBy,
-    sortOrder,
-    exchangeSortBy,
-    exchangeSortOrder,
-  ]);
+      // Сортування бірж
+      const sortedExchanges = Object.keys(newAvailableExchanges)
+        .map((key) => ({ key, ...newAvailableExchanges[key] }))
+        .sort((a, b) => {
+          const multiplier = exchangeSortOrder === 'asc' ? 1 : -1;
+          if (exchangeSortBy === 'name') {
+            return multiplier * a.displayName.localeCompare(b.displayName);
+          } else if (exchangeSortBy === 'tokens') {
+            return multiplier * (a.activeCount - b.activeCount);
+          } else if (exchangeSortBy === 'bestFR') {
+            return multiplier * ((b.bestFR || 0) - (a.bestFR || 0));
+          }
+          return 0;
+        })
+        .reduce((acc, exchange) => {
+          acc[exchange.key] = {
+            displayName: exchange.displayName,
+            logoUrl: exchange.logoUrl,
+            activeCount: exchange.activeCount,
+            bestFR: exchange.bestFR,
+          };
+          return acc;
+        }, {});
+
+      setAvailableExchanges(sortedExchanges);
+    }
+  }, [fundingData, activeTab, exchangeSortBy, exchangeSortOrder, setAvailableExchanges]);
 
   const filteredTokens = useMemo(() => {
     if (!fundingData?.length) return [];
@@ -284,186 +228,156 @@ function FundingSection({ fundingData, isLoading, error, onSelectToken, onSelect
   );
 
   return (
-    <div className={`funding-section-wrapper ${showFilters ? 'with-filter-panel' : ''}`}>
-      <section className="funding-section card">
-        <div className="container">
-          <div className="funding-header">
-            <h2 className="funding-title">
-              Ставки фінансування
-              {isLoading && <div className="loading-spinner"></div>}
-            </h2>
-            <div className="search-and-filters">
-              <div className="search-wrapper">
-                <input
-                  type="text"
-                  placeholder="Search"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="funding-search"
-                />
-                <span className="search-icon"></span>
-              </div>
+    <section className="funding-section card">
+      <div className="container">
+        <div className="funding-header">
+          <h2 className="funding-title">
+            Ставки фінансування
+            {isLoading && <div className="loading-spinner"></div>}
+          </h2>
+          <div className="search-and-filters">
+            <div className="search-wrapper">
+              <input
+                type="text"
+                placeholder="Search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="funding-search"
+              />
+              <span className="search-icon"></span>
             </div>
           </div>
-
-          <div className="funding-tabs">
-            <Tooltip
-              title="Показати ставки для Stablecoin Margin"
-              position="top"
-              trigger="mouseenter"
-              theme="light"
-              arrow
-            >
-              <button
-                onClick={() => setActiveTab('stablecoin')}
-                className={`tab-button ${activeTab === 'stablecoin' ? 'tab-button-active' : 'tab-button-inactive'}`}
-              >
-                Stablecoin Margin
-              </button>
-            </Tooltip>
-            <Tooltip
-              title="Показати ставки для Token Margin"
-              position="top"
-              trigger="mouseenter"
-              theme="light"
-              arrow
-            >
-              <button
-                onClick={() => setActiveTab('token')}
-                className={`tab-button ${activeTab === 'token' ? 'tab-button-active' : 'tab-button-inactive'}`}
-              >
-                Token Margin
-              </button>
-            </Tooltip>
-            <Tooltip
-              title="Відкрити фільтри"
-              position="top"
-              trigger="mouseenter"
-              theme="light"
-              arrow
-            >
-              <button
-                className="filter-button"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <IoFilter size={20} />
-              </button>
-            </Tooltip>
-          </div>
-
-          <div className="funding-info">Знайдено токенів: {filteredTokens.length}</div>
-
-          {error ? (
-            <div className="funding-error">
-              <div className="error-message">{error}</div>
-            </div>
-          ) : filteredTokens.length === 0 && !isLoading ? (
-            <div className="funding-empty">
-              Немає даних для відображення. Перевірте вкладку або пошуковий запит.
-            </div>
-          ) : (
-            <div className="funding-table-container" onScroll={handleScroll}>
-              <table className="funding-table">
-                <thead className="funding-table-header">
-                  <tr className="funding-table-row">
-                    <th className="coin-header">Монета</th>
-                    {Object.keys(availableExchanges).length === 0 ? (
-                      <th className="exchange-header">Немає доступних бірж</th>
-                    ) : (
-                      Object.keys(availableExchanges)
-                        .filter((key) => displayedExchanges[key] !== false)
-                        .map((key) => (
-                          <th key={key} className="exchange-header">
-                            <span className="exchange-header-content">
-                              <img
-                                src={availableExchanges[key].logoUrl}
-                                alt={`${availableExchanges[key].displayName} logo`}
-                                className="exchange-header-logo"
-                              />
-                              <span className="exchange-header-name">
-                                {availableExchanges[key].displayName}
-                              </span>
-                            </span>
-                          </th>
-                        ))
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredTokens.slice(0, visibleCount).map((token) => (
-                    <TokenItem
-                      key={`${token.symbol}-${activeTab}`}
-                      token={token}
-                      marginType={activeTab}
-                      availableExchanges={availableExchanges}
-                      displayedExchanges={displayedExchanges}
-                      onClick={handleTokenClick}
-                      onRateClick={handleRateClick}
-                    />
-                  ))}
-                  {!isLoading && filteredTokens.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={
-                          Object.keys(availableExchanges).length > 0
-                            ? Object.keys(availableExchanges).filter((key) => displayedExchanges[key] !== false).length + 1
-                            : 2
-                        }
-                        className="empty-message"
-                      >
-                        Нічого не знайдено
-                      </td>
-                    </tr>
-                  )}
-                  {filteredTokens.length > visibleCount && (
-                    <tr>
-                      <td
-                        colSpan={
-                          Object.keys(availableExchanges).length > 0
-                            ? Object.keys(availableExchanges).filter((key) => displayedExchanges[key] !== false).length + 1
-                            : 2
-                        }
-                        className="load-more-message"
-                      >
-                        Прокрутіть вниз, щоб завантажити більше...
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
-      </section>
-      {showFilters && (
-        <FilterPanel
-          filtersEnabled={filtersEnabled}
-          setFiltersEnabled={setFiltersEnabled}
-          minFundingRate={minFundingRate}
-          setMinFundingRate={setMinFundingRate}
-          rateSignFilter={rateSignFilter}
-          setRateSignFilter={setRateSignFilter}
-          displayMode={displayMode}
-          setDisplayMode={setDisplayMode}
-          fundingInterval={fundingInterval}
-          setFundingInterval={setFundingInterval}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          sortOrder={sortOrder}
-          setSortOrder={setSortOrder}
-          exchangeSortBy={exchangeSortBy}
-          setExchangeSortBy={setExchangeSortBy}
-          exchangeSortOrder={exchangeSortOrder}
-          setExchangeSortOrder={setExchangeSortOrder}
-          selectedExchanges={displayedExchanges}
-          setSelectedExchanges={setDisplayedExchanges}
-          availableExchanges={availableExchanges}
-          onClose={() => setShowFilters(false)}
-        />
-      )}
-    </div>
+
+        <div className="funding-tabs">
+          <Tooltip
+            title="Показати ставки для Stablecoin Margin"
+            position="top"
+            trigger="mouseenter"
+            theme="light"
+            arrow
+          >
+            <button
+              onClick={() => setActiveTab('stablecoin')}
+              className={`tab-button ${activeTab === 'stablecoin' ? 'tab-button-active' : 'tab-button-inactive'}`}
+            >
+              Stablecoin Margin
+            </button>
+          </Tooltip>
+          <Tooltip
+            title="Показати ставки для Token Margin"
+            position="top"
+            trigger="mouseenter"
+            theme="light"
+            arrow
+          >
+            <button
+              onClick={() => setActiveTab('token')}
+              className={`tab-button ${activeTab === 'token' ? 'tab-button-active' : 'tab-button-inactive'}`}
+            >
+              Token Margin
+            </button>
+          </Tooltip>
+          <Tooltip
+            title="Відкрити фільтри"
+            position="top"
+            trigger="mouseenter"
+            theme="light"
+            arrow
+          >
+            <button
+              className="filter-button"
+              onClick={onToggleFilters}
+            >
+              <IoFilter size={20} />
+            </button>
+          </Tooltip>
+        </div>
+
+        <div className="funding-info">Знайдено токенів: {filteredTokens.length}</div>
+
+        {error ? (
+          <div className="funding-error">
+            <div className="error-message">{error}</div>
+          </div>
+        ) : filteredTokens.length === 0 && !isLoading ? (
+          <div className="funding-empty">
+            Немає даних для відображення. Перевірте вкладку або пошуковий запит.
+          </div>
+        ) : (
+          <div className="funding-table-container" onScroll={handleScroll}>
+            <table className="funding-table">
+              <thead className="funding-table-header">
+                <tr className="funding-table-row">
+                  <th className="coin-header">Монета</th>
+                  {Object.keys(availableExchanges).length === 0 ? (
+                    <th className="exchange-header">Немає доступних бірж</th>
+                  ) : (
+                    Object.keys(availableExchanges)
+                      .filter((key) => displayedExchanges[key] !== false)
+                      .map((key) => (
+                        <th key={key} className="exchange-header">
+                          <span className="exchange-header-content">
+                            <img
+                              src={availableExchanges[key].logoUrl}
+                              alt={`${availableExchanges[key].displayName} logo`}
+                              className="exchange-header-logo"
+                            />
+                            <span className="exchange-header-name">
+                              {availableExchanges[key].displayName}
+                            </span>
+                          </span>
+                        </th>
+                      ))
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTokens.slice(0, visibleCount).map((token) => (
+                  <TokenItem
+                    key={`${token.symbol}-${activeTab}`}
+                    token={token}
+                    marginType={activeTab}
+                    availableExchanges={availableExchanges}
+                    displayedExchanges={displayedExchanges}
+                    onClick={handleTokenClick}
+                    onRateClick={handleRateClick}
+                  />
+                ))}
+                {!isLoading && filteredTokens.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={
+                        Object.keys(availableExchanges).length > 0
+                          ? Object.keys(availableExchanges).filter((key) => displayedExchanges[key] !== false).length + 1
+                          : 2
+                      }
+                      className="empty-message"
+                    >
+                      Нічого не знайдено
+                    </td>
+                  </tr>
+                )}
+                {filteredTokens.length > visibleCount && (
+                  <tr>
+                    <td
+                      colSpan={
+                        Object.keys(availableExchanges).length > 0
+                          ? Object.keys(availableExchanges).filter((key) => displayedExchanges[key] !== false).length + 1
+                          : 2
+                      }
+                      className="load-more-message"
+                    >
+                      Прокрутіть вниз, щоб завантажити більше...
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -502,6 +416,20 @@ FundingSection.propTypes = {
   error: PropTypes.oneOfType([PropTypes.string, PropTypes.node]),
   onSelectToken: PropTypes.func.isRequired,
   onSelectRate: PropTypes.func.isRequired,
+  onToggleFilters: PropTypes.func.isRequired,
+  availableExchanges: PropTypes.object.isRequired,
+  setAvailableExchanges: PropTypes.func.isRequired,
+  filtersEnabled: PropTypes.bool.isRequired,
+  minFundingRate: PropTypes.number.isRequired,
+  rateSignFilter: PropTypes.string.isRequired,
+  displayMode: PropTypes.string.isRequired,
+  fundingInterval: PropTypes.string.isRequired,
+  statusFilter: PropTypes.string.isRequired,
+  sortBy: PropTypes.string.isRequired,
+  sortOrder: PropTypes.string.isRequired,
+  exchangeSortBy: PropTypes.string.isRequired,
+  exchangeSortOrder: PropTypes.string.isRequired,
+  displayedExchanges: PropTypes.object.isRequired,
 };
 
 export default FundingSection;

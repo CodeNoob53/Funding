@@ -3,14 +3,30 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden; /* Прибираємо скрол з усієї сторінки */
 }
 
 .main-content {
-  flex: 1;
+  flex: 1; /* Займає доступний простір між хедером і футером */
+  position: relative;
+  overflow-y: auto; /* Додаємо скрол для контенту */
+  overflow-x: hidden;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-container {
   max-width: 1280px;
+  width: 100%;
   margin: 0 auto;
   padding: 2rem 1rem;
-  width: 100%;
+  position: relative;
+}
+
+.app-with-filters .content-container {
+  padding-right: 450px; /* Додаємо відступ для фільтрів */
+  transition: padding-right 0.3s ease;
 }
 
 .last-updated {
@@ -23,4 +39,11 @@
 
 .calculator-container {
   margin-top: 2rem;
+}
+
+/* Медіа-запит для мобільних пристроїв */
+@media (max-width: 768px) {
+  .app-with-filters .content-container {
+    padding-right: 0;
+  }
 }
