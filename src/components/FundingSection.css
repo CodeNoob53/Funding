@@ -2,21 +2,16 @@
 
 /* #region Main Container */
 .funding-section {
+  width: 97%;
+  max-width: 1200px;
+  height: 100%;
+  margin: var(--spacing-1) auto;
   padding: var(--spacing-4);
-  margin: var(--spacing-1) 0;
   animation: fadeIn 0.5s ease-out;
   background: rgb(var(--card));
   border: 1px solid rgb(var(--border));
   border-radius: var(--border-radius-xl);
-  width: 100%;
 }
-
-.container {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 var(--spacing-4);
-}
-/* #endregion */
 
 /* #region Header */
 .funding-header {
@@ -355,6 +350,10 @@
 }
 
 @media (max-width: 767px) {
+  .funding-section {
+    width: 100%; /* Повна ширина на мобільних */
+  }
+
   .coin-header {
     width: 180px;
   }

@@ -1,11 +1,13 @@
 /* src/components/Footer.css */
 
+/* #region Footer */
 .footer {
+  width: 100%;
   background-color: rgb(var(--card));
   border-top: 1px solid rgb(var(--border));
-  padding: var(--spacing-6) 0;
-  width: 100%;
+  padding: var(--spacing-4);
   z-index: 50;
+  height: var(--footer-height); /* Фіксована висота */
 }
 
 .footer-content {
@@ -14,6 +16,9 @@
   align-items: center;
   gap: var(--spacing-2);
   text-align: center;
+  width: 97%; /* Відповідно до секцій */
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .footer-copyright {
@@ -26,6 +31,9 @@
   color: rgba(var(--foreground), 0.6);
 }
 
+/* #endregion */
+
+/* #region Responsive */
 @media (min-width: 768px) {
   .footer-content {
     flex-direction: row;
@@ -33,3 +41,14 @@
     align-items: center;
   }
 }
+
+@media (max-width: 768px) {
+  .footer {
+    height: var(--footer-height, 80px);
+  }
+
+  .footer-content {
+    width: 100%;
+  }
+}
+/* #endregion */

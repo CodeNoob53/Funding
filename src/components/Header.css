@@ -1,17 +1,16 @@
 /* src/components/Header.css */
 
+/* #region Header */
 .header {
   position: sticky;
   top: 0;
+  width: 100%;
   background-color: rgba(var(--card), 0.95);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid rgb(var(--border));
-  transition: all 0.3s ease;
   z-index: 100;
-  width: 100%;
+  height: var(--header-height); /* Фіксована висота */
 }
-
-/* Інші стилі залишаються без змін */
 
 .header-scrolled {
   box-shadow: var(--shadow-md);
@@ -23,6 +22,9 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-4) 0;
+  width: 97%; /* Відповідно до секцій */
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .header-title {
@@ -52,7 +54,14 @@
   color: rgb(var(--primary));
 }
 
+/* #endregion */
+
+/* #region Responsive */
 @media (max-width: 768px) {
+  .header {
+    height: var(--header-height, 56px);
+  }
+
   .header-title {
     font-size: 1.25rem;
   }
@@ -61,4 +70,9 @@
     width: 2rem;
     height: 2rem;
   }
+
+  .header-content {
+    width: 100%;
+  }
 }
+/* #endregion */

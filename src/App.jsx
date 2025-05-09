@@ -1,4 +1,4 @@
-// src/App.jsx - оновлені зміни
+// src/App.jsx
 import { useState, useEffect } from 'react';
 import Header from './components/Header';
 import FundingSection from './components/FundingSection';
@@ -19,83 +19,28 @@ function App() {
   const [error, setError] = useState(null);
   const [selectedToken, setSelectedToken] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const theme = useThemeStore((state) => state.theme);
-  
-  // Додаємо стани для фільтрів
-  const [showFilters, setShowFilters] = useState(false);
-  const [filtersEnabled, setFiltersEnabled] = useState(() => {
-    return localStorage.getItem('filtersEnabled') === 'true' || false;
-  });
-  const [minFundingRate, setMinFundingRate] = useState(() => {
-    return parseFloat(localStorage.getItem('minFundingRate')) || 0.15;
-  });
-  const [rateSignFilter, setRateSignFilter] = useState(() => {
-    return localStorage.getItem('rateSignFilter') || 'all';
-  });
-  const [displayMode, setDisplayMode] = useState(() => {
-    return localStorage.getItem('displayMode') || 'option1';
-  });
-  const [fundingInterval, setFundingInterval] = useState(() => {
-    return localStorage.getItem('fundingInterval') || 'all';
-  });
-  const [statusFilter, setStatusFilter] = useState(() => {
-    return localStorage.getItem('statusFilter') || 'all';
-  });
-  const [sortBy, setSortBy] = useState(() => localStorage.getItem('sortBy') || 'exchanges');
-  const [sortOrder, setSortOrder] = useState(() => localStorage.getItem('sortOrder') || 'desc');
-  const [exchangeSortBy, setExchangeSortBy] = useState(() => localStorage.getItem('exchangeSortBy') || 'name');
-  const [exchangeSortOrder, setExchangeSortOrder] = useState(() => localStorage.getItem('exchangeSortOrder') || 'asc');
-  const [displayedExchanges, setDisplayedExchanges] = useState(() => {
-    const saved = localStorage.getItem('displayedExchanges');
-    return saved ? JSON.parse(saved) : {};
-  });
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [filtersEnabled, setFiltersEnabled] = useState(true);
+  const [minFundingRate, setMinFundingRate] = useState(0);
+  const [rateSignFilter, setRateSignFilter] = useState('all');
+  const [displayMode, setDisplayMode] = useState('option1');
+  const [fundingInterval, setFundingInterval] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('exchanges');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [exchangeSortBy, setExchangeSortBy] = useState('name');
+  const [exchangeSortOrder, setExchangeSortOrder] = useState('asc');
+  const [selectedExchanges, setSelectedExchanges] = useState({});
   const [availableExchanges, setAvailableExchanges] = useState({});
+  const theme = useThemeStore((state) => state.theme);
 
-  // Зберігаємо фільтри в localStorage
   useEffect(() => {
-    localStorage.setItem('minFundingRate', minFundingRate);
-    localStorage.setItem('rateSignFilter', rateSignFilter);
-    localStorage.setItem('displayMode', displayMode);
-    localStorage.setItem('filtersEnabled', filtersEnabled);
-    localStorage.setItem('displayedExchanges', JSON.stringify(displayedExchanges));
-    localStorage.setItem('fundingInterval', fundingInterval);
-    localStorage.setItem('statusFilter', statusFilter);
-    localStorage.setItem('sortBy', sortBy);
-    localStorage.setItem('sortOrder', sortOrder);
-    localStorage.setItem('exchangeSortBy', exchangeSortBy);
-    localStorage.setItem('exchangeSortOrder', exchangeSortOrder);
-  }, [
-    minFundingRate,
-    rateSignFilter,
-    displayMode,
-    filtersEnabled,
-    displayedExchanges,
-    fundingInterval,
-    statusFilter,
-    sortBy,
-    sortOrder,
-    exchangeSortBy,
-    exchangeSortOrder,
-  ]);
-
-  // Обробка Esc для закриття панелі
-  useEffect(() => {
-    const handleEsc = (event) => {
-      if (event.key === 'Escape' && showFilters) {
-        setShowFilters(false);
-      }
-    };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [showFilters]);
-
-  // Встановлюємо CSS змінні для висот хедера і футера
-  useEffect(() => {
-    const headerHeight = document.querySelector('.header')?.offsetHeight || 72;
-    const footerHeight = document.querySelector('.footer')?.offsetHeight || 96;
-    document.documentElement.style.setProperty('--header-height', `${headerHeight}px`);
-    document.documentElement.style.setProperty('--footer-height', `${footerHeight}px`);
-  }, []);
+    const initialExchanges = {};
+    Object.keys(availableExchanges).forEach((key) => {
+      initialExchanges[key] = true;
+    });
+    setSelectedExchanges(initialExchanges);
+  }, [availableExchanges]);
 
   useEffect(() => {
     logger.info(`Фандинг Калькулятор v${APP_VERSION} запущено`, {
@@ -104,9 +49,9 @@ function App() {
       userAgent: navigator.userAgent,
       language: navigator.language,
       platform: navigator.platform,
-      screenSize: `${window.innerWidth}x${window.innerHeight}`
+      screenSize: `${window.innerWidth}x${window.innerHeight}`,
     });
-  }, [error]);
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -167,15 +112,15 @@ function App() {
     const updatedToken = {
       ...token,
       selectedExchange: exchange,
-      selectedRate: funding_rate
+      selectedRate: funding_rate,
     };
 
     setSelectedToken(updatedToken);
   };
-  
-  // Обробник для відкриття/закриття панелі фільтрів
+
   const handleToggleFilters = () => {
-    setShowFilters(!showFilters);
+    setIsFilterPanelOpen((prev) => !prev);
+    logger.debug(`Панель фільтрів: ${!isFilterPanelOpen ? 'відкрита' : 'закрита'}`);
   };
 
   const formatUpdateTime = (date) => {
@@ -186,49 +131,37 @@ function App() {
   };
 
   return (
-    <div className={`app ${showFilters ? 'app-with-filters' : ''}`} data-theme={theme}>
+    <div className="app" data-theme={theme}>
       <Header />
-
-      <main className="main-content">
-        <div className="content-container">
-          {lastUpdated && (
-            <div className="last-updated">
-              Останнє оновлення: {formatUpdateTime(lastUpdated)}
-            </div>
-          )}
-
-          <FundingSection
-            fundingData={fundingData}
-            isLoading={isLoading}
-            error={error}
-            onSelectToken={handleSelectToken}
-            onSelectRate={handleSelectRate}
-            onToggleFilters={handleToggleFilters}
-            availableExchanges={availableExchanges}
-            setAvailableExchanges={setAvailableExchanges}
-            // Передаємо стан фільтрів
-            filtersEnabled={filtersEnabled}
-            minFundingRate={minFundingRate}
-            rateSignFilter={rateSignFilter}
-            displayMode={displayMode}
-            fundingInterval={fundingInterval}
-            statusFilter={statusFilter}
-            sortBy={sortBy}
-            sortOrder={sortOrder}
-            exchangeSortBy={exchangeSortBy}
-            exchangeSortOrder={exchangeSortOrder}
-            displayedExchanges={displayedExchanges}
-          />
-
-          <div className="calculator-container">
-            <CalculatorSection
-              selectedToken={selectedToken}
-            />
+      <main className={`main-content ${isFilterPanelOpen ? 'with-filter-panel' : ''}`}>
+        {lastUpdated && (
+          <div className="last-updated">
+            Останнє оновлення: {formatUpdateTime(lastUpdated)}
           </div>
-        </div>
-        
-        {/* FilterPanel тепер розміщений в main, але не в content-container */}
-        {showFilters && (
+        )}
+        <FundingSection
+          fundingData={fundingData}
+          isLoading={isLoading}
+          error={error}
+          onSelectToken={handleSelectToken}
+          onSelectRate={handleSelectRate}
+          onToggleFilters={handleToggleFilters}
+          availableExchanges={availableExchanges}
+          setAvailableExchanges={setAvailableExchanges}
+          filtersEnabled={filtersEnabled}
+          minFundingRate={minFundingRate}
+          rateSignFilter={rateSignFilter}
+          displayMode={displayMode}
+          fundingInterval={fundingInterval}
+          statusFilter={statusFilter}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          exchangeSortBy={exchangeSortBy}
+          exchangeSortOrder={exchangeSortOrder}
+          displayedExchanges={selectedExchanges}
+        />
+        <CalculatorSection selectedToken={selectedToken} />
+        {isFilterPanelOpen && (
           <FilterPanel
             filtersEnabled={filtersEnabled}
             setFiltersEnabled={setFiltersEnabled}
@@ -250,14 +183,13 @@ function App() {
             setExchangeSortBy={setExchangeSortBy}
             exchangeSortOrder={exchangeSortOrder}
             setExchangeSortOrder={setExchangeSortOrder}
-            selectedExchanges={displayedExchanges}
-            setSelectedExchanges={setDisplayedExchanges}
+            selectedExchanges={selectedExchanges}
+            setSelectedExchanges={setSelectedExchanges}
             availableExchanges={availableExchanges}
-            onClose={() => setShowFilters(false)}
+            onClose={() => setIsFilterPanelOpen(false)}
           />
         )}
       </main>
-
       <Footer />
     </div>
   );

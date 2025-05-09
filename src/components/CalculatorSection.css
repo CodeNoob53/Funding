@@ -1,10 +1,15 @@
 /* src/components/CalculatorSection.css */
 
 .calculator-section {
-    background: rgb(var(--card));
-    border: 1px solid rgb(var(--border));
-    border-radius: var(--border-radius-xl);
-  }
+  width: 97%;
+  max-width: 1200px;
+  margin: var(--spacing-1) auto;
+  padding: var(--spacing-4);
+  background: rgb(var(--card));
+  border: 1px solid rgb(var(--border));
+  border-radius: var(--border-radius-xl);
+  animation: fadeIn 0.5s ease-out;
+}
   
   .section-header {
     padding: var(--spacing-6);
