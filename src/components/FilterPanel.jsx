@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import './FilterPanel.css';
+import { useState } from 'react';
 
 function FilterPanel({
   filtersEnabled,
@@ -14,19 +15,16 @@ function FilterPanel({
   setFundingInterval,
   statusFilter,
   setStatusFilter,
-  sortBy,
-  setSortBy,
-  sortOrder,
-  setSortOrder,
-  exchangeSortBy,
-  setExchangeSortBy,
-  exchangeSortOrder,
-  setExchangeSortOrder,
   selectedExchanges,
   setSelectedExchanges,
   availableExchanges,
   onClose,
 }) {
+  const [sortBy, setSortBy] = useState('exchanges'); // Кількість бірж
+  const [sortOrder, setSortOrder] = useState('asc'); // Зростання
+  const [exchangeSortBy, setExchangeSortBy] = useState('tokens'); // Кількість токенів
+  const [exchangeSortOrder, setExchangeSortOrder] = useState('asc'); // Зростання
+
   return (
     <div className="filter-panel">
       <div className="filter-panel-header">
@@ -216,14 +214,6 @@ FilterPanel.propTypes = {
   setFundingInterval: PropTypes.func.isRequired,
   statusFilter: PropTypes.string.isRequired,
   setStatusFilter: PropTypes.func.isRequired,
-  sortBy: PropTypes.string.isRequired,
-  setSortBy: PropTypes.func.isRequired,
-  sortOrder: PropTypes.string.isRequired,
-  setSortOrder: PropTypes.func.isRequired,
-  exchangeSortBy: PropTypes.string.isRequired,
-  setExchangeSortBy: PropTypes.func.isRequired,
-  exchangeSortOrder: PropTypes.string.isRequired,
-  setExchangeSortOrder: PropTypes.func.isRequired,
   selectedExchanges: PropTypes.object.isRequired,
   setSelectedExchanges: PropTypes.func.isRequired,
   availableExchanges: PropTypes.object.isRequired,
