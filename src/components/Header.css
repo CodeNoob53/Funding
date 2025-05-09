@@ -9,7 +9,7 @@
   backdrop-filter: blur(8px);
   border-bottom: 1px solid rgb(var(--border));
   z-index: 100;
-  height: var(--header-height); /* Фіксована висота */
+  /* Видалено height, висота визначається вмістом */
 }
 
 .header-scrolled {
@@ -22,9 +22,10 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-4) 0;
-  width: 97%; /* Відповідно до секцій */
+  width: 97%;
   max-width: 1200px;
   margin: 0 auto;
+  min-height: 56px; /* Гарантуємо мінімальну висоту */
 }
 
 .header-title {
@@ -58,8 +59,8 @@
 
 /* #region Responsive */
 @media (max-width: 768px) {
-  .header {
-    height: var(--header-height, 56px);
+  .header-content {
+    min-height: 48px; /* Менша висота для мобільних */
   }
 
   .header-title {

@@ -25,7 +25,7 @@ body {
   transition: margin-right 0.3s ease;
   scrollbar-width: thin;
   scrollbar-color: rgb(var(--primary)) rgb(var(--border));
-  max-height: calc(100vh - var(--header-height, 72px) - var(--footer-height, 96px)); /* Обмежуємо висоту */
+  max-height: calc(100vh - var(--header-height, 72px) - var(--footer-height, 50px)); /* Обмежуємо висоту */
 }
 
 /* Зменшуємо відступ, коли панель фільтрів відкрита */
@@ -82,7 +82,7 @@ body {
   }
 
   .main-content {
-    max-height: calc(100vh - var(--header-height, 56px) - var(--footer-height, 80px));
+    max-height: calc(100vh - var(--header-height, 56px) - var(--footer-height, 50px));
   }
 
   .container {

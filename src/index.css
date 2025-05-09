@@ -2,7 +2,6 @@
 /* Імпорт стилів tippy.js */
 @import 'tippy.js/dist/tippy.css';
 @import 'tippy.js/themes/light.css'; /* Опціонально: світла тема для підказок */
-
 /* 1. Змінні та глобальні стилі */
 :root {
   /* Темна тема за замовчуванням */
@@ -59,7 +58,6 @@ body {
   color: rgb(var(--foreground));
   font-family: 'Inter', system-ui, sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
-  line-height: 1.6;
   font-size: 16px;
 }
 
