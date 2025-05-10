@@ -10,8 +10,8 @@ export const STORAGE_KEYS = {
 
 // Дефолтні налаштування додатку
 export const DEFAULT_SETTINGS = {
-// Налаштування фільтрів
-filters: {
+  // Налаштування фільтрів
+  filters: {
     enabled: true,
 
     // minFundingRate: 0.15
@@ -50,8 +50,44 @@ filters: {
     // exchangeSortOrder: 'asc' | 'desc'
     // 'asc' - зростання, 'desc' - спадання
     exchangeSortOrder: 'asc',
-    selectedExchanges: {}
-},
+    
+    // Налаштування видимості бірж для різних типів маржі
+    selectedExchanges: {},
+    
+    // Активні біржі для USD Margined (Stablecoin)
+    stablecoinExchanges: {
+      binance: true,
+      okx: true,
+      dydx: false,
+      bybit: true,
+      vertex: true,
+      bitget: true,
+      coinex: false,
+      bitfinex: false,
+      kraken: false,
+      htx: false,
+      bingx: true,
+      gateio: true,
+      cryptocom: true,
+      coinbase: false,
+      hyperliquid: false,
+      bitunix: true,
+      mexc: true,
+      whitebit: true
+    },
+    
+    // Активні біржі для Token Margined
+    tokenExchanges: {
+      binance: true,
+      okx: true,
+      bitmex: false,
+      bybit: true,
+      deribit: false,
+      coinex: false,
+      kraken: false,
+      htx: false
+    }
+  },
 
   // Налаштування калькулятора
   // дефолтні значення для калькулятора

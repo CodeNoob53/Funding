@@ -7,8 +7,8 @@
   max-width: 450px;
   background: linear-gradient(
     135deg,
-    rgba(var(--card), 0.95),
-    rgba(var(--card), 0.85)
+    rgba(var(--card), 1),
+    rgba(var(--card), 1)
   );
   border-left: 1px solid rgb(var(--border));
   padding: var(--spacing-4);
@@ -56,6 +56,77 @@
 .filter-close-button:hover {
   background: rgba(var(--primary), 0.8);
   transform: scale(1.1);
+}
+/* #endregion */
+
+/* #region Filter Tabs */
+.filter-tabs {
+  display: flex;
+  gap: var(--spacing-1);
+  margin-bottom: var(--spacing-4);
+  border-bottom: 1px solid rgb(var(--border));
+  padding-bottom: var(--spacing-2);
+}
+
+.filter-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  border: none;
+  background: transparent;
+  color: rgba(var(--foreground), 0.7);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--border-radius-md);
+  transition: all 0.2s ease;
+}
+
+.filter-tab:hover {
+  background: rgba(var(--foreground), 0.05);
+  color: rgb(var(--foreground));
+}
+
+.filter-tab.active {
+  background: rgba(var(--primary), 0.1);
+  color: rgb(var(--primary));
+  font-weight: 600;
+}
+
+.filter-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: var(--spacing-2);
+}
+
+.filter-action {
+  margin-top: var(--spacing-4);
+  padding-top: var(--spacing-4);
+  border-top: 1px solid rgb(var(--border));
+}
+
+.filter-reset-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  width: 100%;
+  padding: var(--spacing-3);
+  border-radius: var(--border-radius-md);
+  font-weight: 600;
+  font-size: 0.875rem;
+  background: linear-gradient(to right, rgba(var(--primary), 0.8), rgba(var(--primary), 0.6));
+  color: rgb(var(--primary-foreground));
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-reset-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  background: linear-gradient(to right, rgb(var(--primary)), rgba(var(--primary), 0.8));
 }
 /* #endregion */
 
@@ -146,24 +217,73 @@
 /* #endregion */
 
 /* #region Exchange Checkboxes */
-.exchange-checkboxes {
+.exchanges-wrapper {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2);
-  max-height: 200px;
-  overflow-y: auto;
-  padding: var(--spacing-2);
   border: 1px solid rgb(var(--border));
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+}
+
+.exchanges-header-container {
+  display: flex;
+  width: 100%;
+}
+
+.exchange-header-tab {
+  flex: 1;
+  padding: var(--spacing-2);
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  background: rgb(59, 59, 59);
+  color: rgb(var(--primary));
+  border-bottom: 1px solid rgb(var(--border));
+}
+
+.exchange-header-tab.active {
+  background: rgb(var(--primary), 0.2);
+  color: rgb(var(--primary));
+}
+
+.exchanges-columns-container {
+  display: flex;
+  width: 100%;
+  min-height: 300px;
+}
+
+.exchange-checkboxes {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  min-height: 300px;
+  padding: var(--spacing-2);
+  overflow-y: auto;
+  border-right: 1px solid rgb(var(--border));
+}
+
+.exchange-checkboxes:last-child {
+  border-right: none;
 }
 
 .exchange-checkbox {
   display: flex;
   align-items: center;
-  gap: var(--spacing-1);
+  gap: var(--spacing-2);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--border-radius-sm);
+  transition: background 0.2s ease;
+}
+
+.exchange-checkbox:hover {
+  background: rgba(var(--foreground), 0.05);
 }
 
 .exchange-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
   accent-color: rgb(var(--primary));
   cursor: pointer;
 }
@@ -171,6 +291,13 @@
 .exchange-checkbox input[type="checkbox"]:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.exchange-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  object-fit: contain;
 }
 /* #endregion */
 
@@ -208,6 +335,20 @@
   .filter-select,
   .filter-select-wide {
     width: 100%;
+  }
+  
+  .exchange-checkboxes {
+    border-right: none;
+    border-bottom: 1px solid rgb(var(--border));
+  }
+  
+  .exchange-checkboxes:last-child {
+    border-bottom: none;
+  }
+  
+  .filter-tabs {
+    overflow-x: auto;
+    justify-content: space-between;
   }
 }
 /* #endregion */

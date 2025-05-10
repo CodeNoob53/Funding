@@ -62,11 +62,20 @@ const useAppStore = create(
         }));
       },
       
-      updateExchangeVisibility: (exchange, isVisible) => {
-        logger.debug(`Оновлено видимість біржі ${exchange}: ${isVisible}`);
+      // Оновлення видимості біржі для конкретного типу маржі
+      updateExchangeVisibility: (exchange, isVisible, marginType = 'stablecoin') => {
+        logger.debug(`Оновлено видимість біржі ${exchange} для ${marginType}: ${isVisible}`);
+        
+        const exchangeTypeKey = marginType === 'stablecoin' ? 'stablecoinExchanges' : 'tokenExchanges';
+        
         set((state) => ({
           filters: {
             ...state.filters,
+            [exchangeTypeKey]: {
+              ...state.filters[exchangeTypeKey],
+              [exchange]: isVisible
+            },
+            // Для зворотної сумісності
             selectedExchanges: {
               ...state.filters.selectedExchanges,
               [exchange]: isVisible
@@ -75,18 +84,65 @@ const useAppStore = create(
         }));
       },
       
+      // Скидання фільтрів для конкретної вкладки
+      resetTabFilters: (tabType) => {
+        logger.debug(`Скидання фільтрів для вкладки: ${tabType}`);
+        
+        set((state) => {
+          const newFilters = { ...state.filters };
+          
+          if (tabType === 'filter') {
+            newFilters.enabled = DEFAULT_SETTINGS.filters.enabled;
+            newFilters.minFundingRate = DEFAULT_SETTINGS.filters.minFundingRate;
+            newFilters.rateSignFilter = DEFAULT_SETTINGS.filters.rateSignFilter;
+            newFilters.displayMode = DEFAULT_SETTINGS.filters.displayMode;
+          } 
+          else if (tabType === 'sorting') {
+            newFilters.fundingInterval = DEFAULT_SETTINGS.filters.fundingInterval;
+            newFilters.statusFilter = DEFAULT_SETTINGS.filters.statusFilter;
+            newFilters.sortBy = DEFAULT_SETTINGS.filters.sortBy;
+            newFilters.sortOrder = DEFAULT_SETTINGS.filters.sortOrder;
+            newFilters.exchangeSortBy = DEFAULT_SETTINGS.filters.exchangeSortBy;
+            newFilters.exchangeSortOrder = DEFAULT_SETTINGS.filters.exchangeSortOrder;
+          } 
+          else if (tabType === 'display') {
+            newFilters.stablecoinExchanges = { ...DEFAULT_SETTINGS.filters.stablecoinExchanges };
+            newFilters.tokenExchanges = { ...DEFAULT_SETTINGS.filters.tokenExchanges };
+            // Для зворотної сумісності
+            newFilters.selectedExchanges = { ...DEFAULT_SETTINGS.filters.selectedExchanges };
+          }
+          
+          return { filters: newFilters };
+        });
+      },
+      
       // Методи для роботи з доступними біржами
       setAvailableExchanges: (exchanges) => {
         set({ availableExchanges: exchanges });
         
-        // Оновлюємо selectedExchanges, додаючи нові біржі
+        // Оновлюємо selectedExchanges, додаючи нові біржі для зворотної сумісності
         const currentSelected = get().filters.selectedExchanges;
+        const currentStablecoin = get().filters.stablecoinExchanges || {};
+        const currentToken = get().filters.tokenExchanges || {};
+        
         const updatedSelected = { ...currentSelected };
+        const updatedStablecoin = { ...currentStablecoin };
+        const updatedToken = { ...currentToken };
         
         let hasChanges = false;
         Object.keys(exchanges).forEach((key) => {
           if (updatedSelected[key] === undefined) {
             updatedSelected[key] = true;
+            hasChanges = true;
+          }
+          
+          if (updatedStablecoin[key] === undefined) {
+            updatedStablecoin[key] = true;
+            hasChanges = true;
+          }
+          
+          if (updatedToken[key] === undefined) {
+            updatedToken[key] = true;
             hasChanges = true;
           }
         });
@@ -95,7 +151,9 @@ const useAppStore = create(
           set((state) => ({
             filters: {
               ...state.filters,
-              selectedExchanges: updatedSelected
+              selectedExchanges: updatedSelected,
+              stablecoinExchanges: updatedStablecoin,
+              tokenExchanges: updatedToken
             }
           }));
         }
