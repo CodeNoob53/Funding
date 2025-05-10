@@ -7,31 +7,49 @@ import { IoFilter } from 'react-icons/io5';
 import { Tooltip } from 'react-tippy';
 import 'react-tippy/dist/tippy.css';
 import ExchangeCap from '../assets/cap/ExchangeCap.avif';
+import useAppStore from '../store/appStore';
+import { UI_CONFIG } from '../config/appConfig';
 
-function FundingSection({ 
-  fundingData, 
-  isLoading, 
-  error, 
-  onSelectToken, 
-  onSelectRate,
-  onToggleFilters,
-  availableExchanges,
-  setAvailableExchanges,
-  filtersEnabled,
-  minFundingRate,
-  rateSignFilter,
-  displayMode,
-  fundingInterval,
-  statusFilter,
-  sortBy,
-  sortOrder,
-  exchangeSortBy,
-  exchangeSortOrder,
-  displayedExchanges
-}) {
+function FundingSection({ onToggleFilters }) {
+  // Отримуємо дані з стору
+  const { 
+    fundingData, 
+    isLoading, 
+    error, 
+    setSelectedToken, 
+    selectRate,
+    availableExchanges, 
+    setAvailableExchanges,
+    filters
+  } = useAppStore(state => ({
+    fundingData: state.fundingData,
+    isLoading: state.isLoading,
+    error: state.error,
+    setSelectedToken: state.setSelectedToken,
+    selectRate: state.selectRate,
+    availableExchanges: state.availableExchanges,
+    setAvailableExchanges: state.setAvailableExchanges,
+    filters: state.filters
+  }));
+
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('stablecoin');
-  const [visibleCount, setVisibleCount] = useState(50);
+  const [visibleCount, setVisibleCount] = useState(UI_CONFIG.MAX_VISIBLE_TOKENS);
+
+  // Деструктуризуємо фільтри
+  const {
+    enabled: filtersEnabled,
+    minFundingRate,
+    rateSignFilter,
+    displayMode,
+    fundingInterval,
+    statusFilter,
+    sortBy,
+    sortOrder,
+    exchangeSortBy,
+    exchangeSortOrder,
+    selectedExchanges
+  } = filters;
 
   // Оновлюємо доступні біржі при зміні даних
   useEffect(() => {
@@ -105,7 +123,7 @@ function FundingSection({
           const status = entry.status;
           const exchange = entry.exchange.toLowerCase();
 
-          if (rate === undefined || rate === null || !displayedExchanges[exchange]) return false;
+          if (rate === undefined || rate === null || !selectedExchanges[exchange]) return false;
 
           const matchesRateSign =
             rateSignFilter === 'all' ||
@@ -130,7 +148,7 @@ function FundingSection({
         const filteredExchanges = Object.keys(availableExchanges)
           .map((key) => {
             const entry = marginList.find((e) => e.exchange?.toLowerCase() === key);
-            if (!entry || entry.funding_rate == null || !displayedExchanges[key]) return null;
+            if (!entry || entry.funding_rate == null || !selectedExchanges[key]) return null;
 
             const meetsRateSign =
               rateSignFilter === 'all' ||
@@ -192,7 +210,7 @@ function FundingSection({
     filtersEnabled,
     availableExchanges,
     displayMode,
-    displayedExchanges,
+    selectedExchanges,
     fundingInterval,
     statusFilter,
     sortBy,
@@ -203,29 +221,23 @@ function FundingSection({
     (e) => {
       const { scrollTop, scrollHeight, clientHeight } = e.target;
       if (scrollHeight - scrollTop <= clientHeight * 1.5 && visibleCount < filteredTokens.length) {
-        setVisibleCount((prev) => Math.min(prev + 20, filteredTokens.length));
+        setVisibleCount((prev) => Math.min(prev + UI_CONFIG.TOKENS_LOAD_STEP, filteredTokens.length));
       }
     },
     [filteredTokens.length, visibleCount]
   );
 
   useEffect(() => {
-    setVisibleCount(50);
+    setVisibleCount(UI_CONFIG.MAX_VISIBLE_TOKENS);
   }, [searchQuery, activeTab, minFundingRate, rateSignFilter, filtersEnabled, fundingInterval, statusFilter, sortBy, sortOrder]);
 
-  const handleTokenClick = useCallback(
-    (token) => {
-      onSelectToken(token);
-    },
-    [onSelectToken]
-  );
+  const handleTokenClick = useCallback((token) => {
+    setSelectedToken(token);
+  }, [setSelectedToken]);
 
-  const handleRateClick = useCallback(
-    (data) => {
-      onSelectRate(data);
-    },
-    [onSelectRate]
-  );
+  const handleRateClick = useCallback((data) => {
+    selectRate(data);
+  }, [selectRate]);
 
   return (
     <section className="funding-section card">
@@ -314,7 +326,7 @@ function FundingSection({
                     <th className="exchange-header">Немає доступних бірж</th>
                   ) : (
                     Object.keys(availableExchanges)
-                      .filter((key) => displayedExchanges[key] !== false)
+                      .filter((key) => selectedExchanges[key] !== false)
                       .map((key) => (
                         <th key={key} className="exchange-header">
                           <span className="exchange-header-content">
@@ -338,8 +350,6 @@ function FundingSection({
                     key={`${token.symbol}-${activeTab}`}
                     token={token}
                     marginType={activeTab}
-                    availableExchanges={availableExchanges}
-                    displayedExchanges={displayedExchanges}
                     onClick={handleTokenClick}
                     onRateClick={handleRateClick}
                   />
@@ -349,7 +359,7 @@ function FundingSection({
                     <td
                       colSpan={
                         Object.keys(availableExchanges).length > 0
-                          ? Object.keys(availableExchanges).filter((key) => displayedExchanges[key] !== false).length + 1
+                          ? Object.keys(availableExchanges).filter((key) => selectedExchanges[key] !== false).length + 1
                           : 2
                       }
                       className="empty-message"
@@ -363,7 +373,7 @@ function FundingSection({
                     <td
                       colSpan={
                         Object.keys(availableExchanges).length > 0
-                          ? Object.keys(availableExchanges).filter((key) => displayedExchanges[key] !== false).length + 1
+                          ? Object.keys(availableExchanges).filter((key) => selectedExchanges[key] !== false).length + 1
                           : 2
                       }
                       className="load-more-message"
@@ -381,55 +391,9 @@ function FundingSection({
   );
 }
 
-FundingSection.propTypes = {
-  fundingData: PropTypes.arrayOf(
-    PropTypes.shape({
-      symbol: PropTypes.string.isRequired,
-      symbolLogo: PropTypes.string,
-      stablecoin_margin_list: PropTypes.arrayOf(
-        PropTypes.shape({
-          exchange: PropTypes.string,
-          exchange_logo: PropTypes.string,
-          funding_rate: PropTypes.number,
-          funding_rate_interval: PropTypes.number,
-          next_funding_time: PropTypes.number,
-          predicted_rate: PropTypes.number,
-          price: PropTypes.number,
-          status: PropTypes.number,
-        })
-      ),
-      token_margin_list: PropTypes.arrayOf(
-        PropTypes.shape({
-          exchange: PropTypes.string,
-          exchange_logo: PropTypes.string,
-          funding_rate: PropTypes.number,
-          funding_rate_interval: PropTypes.number,
-          next_funding_time: PropTypes.number,
-          predicted_rate: PropTypes.number,
-          price: PropTypes.number,
-          status: PropTypes.number,
-        })
-      ),
-    })
-  ).isRequired,
-  isLoading: PropTypes.bool.isRequired,
-  error: PropTypes.oneOfType([PropTypes.string, PropTypes.node]),
-  onSelectToken: PropTypes.func.isRequired,
-  onSelectRate: PropTypes.func.isRequired,
-  onToggleFilters: PropTypes.func.isRequired,
-  availableExchanges: PropTypes.object.isRequired,
-  setAvailableExchanges: PropTypes.func.isRequired,
-  filtersEnabled: PropTypes.bool.isRequired,
-  minFundingRate: PropTypes.number.isRequired,
-  rateSignFilter: PropTypes.string.isRequired,
-  displayMode: PropTypes.string.isRequired,
-  fundingInterval: PropTypes.string.isRequired,
-  statusFilter: PropTypes.string.isRequired,
-  sortBy: PropTypes.string.isRequired,
-  sortOrder: PropTypes.string.isRequired,
-  exchangeSortBy: PropTypes.string.isRequired,
-  exchangeSortOrder: PropTypes.string.isRequired,
-  displayedExchanges: PropTypes.object.isRequired,
-};
 
+
+FundingSection.propTypes = {
+  onToggleFilters: PropTypes.func.isRequired,
+};
 export default FundingSection;

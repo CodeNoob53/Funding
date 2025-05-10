@@ -1,29 +1,45 @@
 import PropTypes from 'prop-types';
 import './FilterPanel.css';
-import { useState } from 'react';
+import useAppStore from '../store/appStore';
 
-function FilterPanel({
-  filtersEnabled,
-  setFiltersEnabled,
-  minFundingRate,
-  setMinFundingRate,
-  rateSignFilter,
-  setRateSignFilter,
-  displayMode,
-  setDisplayMode,
-  fundingInterval,
-  setFundingInterval,
-  statusFilter,
-  setStatusFilter,
-  selectedExchanges,
-  setSelectedExchanges,
-  availableExchanges,
-  onClose,
-}) {
-  const [sortBy, setSortBy] = useState('exchanges'); // Кількість бірж
-  const [sortOrder, setSortOrder] = useState('asc'); // Зростання
-  const [exchangeSortBy, setExchangeSortBy] = useState('tokens'); // Кількість токенів
-  const [exchangeSortOrder, setExchangeSortOrder] = useState('asc'); // Зростання
+function FilterPanel({ onClose }) {
+  const { 
+    filters,
+    updateFilter,
+    updateExchangeVisibility,
+    availableExchanges
+  } = useAppStore(state => ({
+    filters: state.filters,
+    updateFilter: state.updateFilter,
+    updateExchangeVisibility: state.updateExchangeVisibility,
+    availableExchanges: state.availableExchanges
+  }));
+
+  // Деструктуризуємо налаштування фільтрів
+  const {
+    enabled: filtersEnabled,
+    minFundingRate,
+    rateSignFilter,
+    displayMode,
+    fundingInterval,
+    statusFilter,
+    sortBy,
+    sortOrder,
+    exchangeSortBy,
+    exchangeSortOrder,
+    selectedExchanges
+  } = filters;
+
+  const setFiltersEnabled = (value) => updateFilter('enabled', value);
+  const setMinFundingRate = (value) => updateFilter('minFundingRate', value);
+  const setRateSignFilter = (value) => updateFilter('rateSignFilter', value);
+  const setDisplayMode = (value) => updateFilter('displayMode', value);
+  const setFundingInterval = (value) => updateFilter('fundingInterval', value);
+  const setStatusFilter = (value) => updateFilter('statusFilter', value);
+  const setSortBy = (value) => updateFilter('sortBy', value);
+  const setSortOrder = (value) => updateFilter('sortOrder', value);
+  const setExchangeSortBy = (value) => updateFilter('exchangeSortBy', value);
+  const setExchangeSortOrder = (value) => updateFilter('exchangeSortOrder', value);
 
   return (
     <div className="filter-panel">
@@ -184,12 +200,7 @@ function FilterPanel({
               <input
                 type="checkbox"
                 checked={selectedExchanges[exchange] !== false}
-                onChange={() =>
-                  setSelectedExchanges({
-                    ...selectedExchanges,
-                    [exchange]: !selectedExchanges[exchange],
-                  })
-                }
+                onChange={() => updateExchangeVisibility(exchange, !selectedExchanges[exchange])}
                 disabled={!filtersEnabled}
               />
               {availableExchanges[exchange].displayName}
@@ -202,21 +213,6 @@ function FilterPanel({
 }
 
 FilterPanel.propTypes = {
-  filtersEnabled: PropTypes.bool.isRequired,
-  setFiltersEnabled: PropTypes.func.isRequired,
-  minFundingRate: PropTypes.number.isRequired,
-  setMinFundingRate: PropTypes.func.isRequired,
-  rateSignFilter: PropTypes.string.isRequired,
-  setRateSignFilter: PropTypes.func.isRequired,
-  displayMode: PropTypes.string.isRequired,
-  setDisplayMode: PropTypes.func.isRequired,
-  fundingInterval: PropTypes.string.isRequired,
-  setFundingInterval: PropTypes.func.isRequired,
-  statusFilter: PropTypes.string.isRequired,
-  setStatusFilter: PropTypes.func.isRequired,
-  selectedExchanges: PropTypes.object.isRequired,
-  setSelectedExchanges: PropTypes.func.isRequired,
-  availableExchanges: PropTypes.object.isRequired,
   onClose: PropTypes.func.isRequired,
 };
 
