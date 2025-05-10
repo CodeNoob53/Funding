@@ -16,7 +16,7 @@
   animation: slideInRight 0.3s ease-out;
   position: fixed;
   right: 0;
-  top: var(--header-height, 72px); /* Висота хедера */
+  top: var(--header-height, 56px); /* Висота хедера */
   height: calc(
     100vh - var(--header-height, 56px) - var(--footer-height, 50px)
   ); /* Висота між хедером і футером */
@@ -91,7 +91,7 @@
 .filter-tab.active {
   background: rgba(var(--primary), 0.1);
   color: rgb(var(--primary));
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .filter-content {

@@ -3,6 +3,7 @@
 /* #region Header */
 .header {
   position: sticky;
+  height: 100%;
   top: 0;
   width: 100%;
   background-color: rgba(var(--card), 0.95);
@@ -21,7 +22,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-4) 0;
+  padding: var(--spacing-2) 0;
   width: 97%;
   margin: 0 auto;
   min-height: 50px; /* Гарантуємо мінімальну висоту */
