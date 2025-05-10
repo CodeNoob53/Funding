@@ -18,7 +18,7 @@
   right: 0;
   top: var(--header-height, 72px); /* Висота хедера */
   height: calc(
-    100vh - var(--header-height, 72px) - var(--footer-height, 50px)
+    100vh - var(--header-height, 56px) - var(--footer-height, 50px)
   ); /* Висота між хедером і футером */
   z-index: 90;
   overflow-y: auto;
