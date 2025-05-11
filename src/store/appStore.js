@@ -7,163 +7,149 @@ import logger from '../services/logger';
 const useAppStore = create(
   persist(
     (set, get) => ({
-      // Стани
       fundingData: [],
       isLoading: false,
       error: null,
       selectedToken: null,
       isFilterPanelOpen: false,
-      
-      // Налаштування фільтрів
       filters: DEFAULT_SETTINGS.filters,
-      
-      // Налаштування біржі та доступні біржі
       availableExchanges: {},
-      
-      // Методи для роботи з даними фандингу
+      sortedExchangeKeys: [],
+
       setFundingData: (data) => set({ fundingData: data }),
       setIsLoading: (isLoading) => set({ isLoading }),
       setError: (error) => set({ error }),
-      
-      // Методи для роботи з токенами
       setSelectedToken: (token) => {
         logger.debug(`Вибрано токен: ${token?.symbol}`);
         set({ selectedToken: token });
       },
-      
       selectRate: (data) => {
         const { token, exchange, funding_rate } = data;
         logger.debug(`Вибрано ставку: ${token.symbol} на ${exchange} (${funding_rate})`);
-        
-        const updatedToken = {
-          ...token,
-          selectedExchange: exchange,
-          selectedRate: funding_rate,
-        };
-        
-        set({ selectedToken: updatedToken });
+        set({ selectedToken: { ...token, selectedExchange: exchange, selectedRate: funding_rate } });
       },
-      
-      // Методи для роботи з панеллю фільтрів
       toggleFilterPanel: () => {
         const newState = !get().isFilterPanelOpen;
         logger.debug(`Панель фільтрів: ${newState ? 'відкрита' : 'закрита'}`);
         set({ isFilterPanelOpen: newState });
       },
-      
-      // Методи для налаштування фільтрів
       updateFilter: (key, value) => {
         logger.debug(`Оновлено фільтр: ${key} = ${value}`);
         set((state) => ({
-          filters: {
-            ...state.filters,
-            [key]: value
-          }
+          filters: { ...state.filters, [key]: value },
         }));
       },
-      
-      // Оновлення видимості біржі для конкретного типу маржі
       updateExchangeVisibility: (exchange, isVisible, marginType = 'stablecoin') => {
-        logger.debug(`Оновлено видимість біржі ${exchange} для ${marginType}: ${isVisible}`);
-        
+        logger.debug(`Оновлення видимості біржі ${exchange} для ${marginType}: ${isVisible}`);
         const exchangeTypeKey = marginType === 'stablecoin' ? 'stablecoinExchanges' : 'tokenExchanges';
-        
-        set((state) => ({
-          filters: {
-            ...state.filters,
-            [exchangeTypeKey]: {
-              ...state.filters[exchangeTypeKey],
-              [exchange]: isVisible
+        set((state) => {
+          const currentFilters = state.filters;
+          const updatedExchanges = {
+            ...currentFilters[exchangeTypeKey],
+            [exchange]: isVisible,
+          };
+          const otherTypeKey = marginType === 'stablecoin' ? 'tokenExchanges' : 'stablecoinExchanges';
+          const selectedExchanges = {
+            ...currentFilters.selectedExchanges,
+            [exchange]: updatedExchanges[exchange] || currentFilters[otherTypeKey][exchange] || false,
+          };
+          logger.debug(`Новий стан для ${exchange}:`, {
+            [exchangeTypeKey]: updatedExchanges,
+            selectedExchanges,
+          });
+          return {
+            filters: {
+              ...currentFilters,
+              [exchangeTypeKey]: updatedExchanges,
+              selectedExchanges,
             },
-            // Для зворотної сумісності
-            selectedExchanges: {
-              ...state.filters.selectedExchanges,
-              [exchange]: isVisible
-            }
-          }
-        }));
+          };
+        });
       },
-      
-      // Скидання фільтрів для конкретної вкладки
       resetTabFilters: (tabType) => {
         logger.debug(`Скидання фільтрів для вкладки: ${tabType}`);
-        
         set((state) => {
           const newFilters = { ...state.filters };
-          
           if (tabType === 'filter') {
             newFilters.enabled = DEFAULT_SETTINGS.filters.enabled;
             newFilters.minFundingRate = DEFAULT_SETTINGS.filters.minFundingRate;
             newFilters.rateSignFilter = DEFAULT_SETTINGS.filters.rateSignFilter;
             newFilters.displayMode = DEFAULT_SETTINGS.filters.displayMode;
-          } 
-          else if (tabType === 'sorting') {
+          } else if (tabType === 'sorting') {
             newFilters.fundingInterval = DEFAULT_SETTINGS.filters.fundingInterval;
             newFilters.statusFilter = DEFAULT_SETTINGS.filters.statusFilter;
             newFilters.sortBy = DEFAULT_SETTINGS.filters.sortBy;
             newFilters.sortOrder = DEFAULT_SETTINGS.filters.sortOrder;
             newFilters.exchangeSortBy = DEFAULT_SETTINGS.filters.exchangeSortBy;
             newFilters.exchangeSortOrder = DEFAULT_SETTINGS.filters.exchangeSortOrder;
-          } 
-          else if (tabType === 'display') {
+          } else if (tabType === 'display') {
             newFilters.stablecoinExchanges = { ...DEFAULT_SETTINGS.filters.stablecoinExchanges };
             newFilters.tokenExchanges = { ...DEFAULT_SETTINGS.filters.tokenExchanges };
-            // Для зворотної сумісності
-            newFilters.selectedExchanges = { ...DEFAULT_SETTINGS.filters.selectedExchanges };
+            newFilters.selectedExchanges = Object.keys({
+              ...DEFAULT_SETTINGS.filters.stablecoinExchanges,
+              ...DEFAULT_SETTINGS.filters.tokenExchanges,
+            }).reduce((acc, key) => ({
+              ...acc,
+              [key]:
+                DEFAULT_SETTINGS.filters.stablecoinExchanges[key] ||
+                DEFAULT_SETTINGS.filters.tokenExchanges[key],
+            }), {});
           }
-          
           return { filters: newFilters };
         });
       },
-      
-      // Методи для роботи з доступними біржами
-      setAvailableExchanges: (exchanges) => {
-        set({ availableExchanges: exchanges });
-        
-        // Оновлюємо selectedExchanges, додаючи нові біржі для зворотної сумісності
-        const currentSelected = get().filters.selectedExchanges;
+      setAvailableExchanges: (exchanges, sortBy, sortOrder) => {
+        const sortedKeys = Object.keys(exchanges)
+          .map((key) => ({ key, ...exchanges[key] }))
+          .sort((a, b) => {
+            const multiplier = sortOrder === 'asc' ? 1 : -1;
+            if (sortBy === 'name') return multiplier * a.displayName.localeCompare(b.displayName);
+            if (sortBy === 'tokens') return multiplier * (a.activeCount - b.activeCount);
+            if (sortBy === 'bestFR') return multiplier * ((b.bestFR || 0) - (a.bestFR || 0));
+            return 0;
+          })
+          .map((exchange) => exchange.key);
+
+        set({ availableExchanges: exchanges, sortedExchangeKeys: sortedKeys });
+
         const currentStablecoin = get().filters.stablecoinExchanges || {};
         const currentToken = get().filters.tokenExchanges || {};
-        
-        const updatedSelected = { ...currentSelected };
         const updatedStablecoin = { ...currentStablecoin };
         const updatedToken = { ...currentToken };
-        
         let hasChanges = false;
         Object.keys(exchanges).forEach((key) => {
-          if (updatedSelected[key] === undefined) {
-            updatedSelected[key] = true;
-            hasChanges = true;
-          }
-          
           if (updatedStablecoin[key] === undefined) {
             updatedStablecoin[key] = true;
             hasChanges = true;
           }
-          
           if (updatedToken[key] === undefined) {
             updatedToken[key] = true;
             hasChanges = true;
           }
         });
-        
         if (hasChanges) {
           set((state) => ({
             filters: {
               ...state.filters,
-              selectedExchanges: updatedSelected,
               stablecoinExchanges: updatedStablecoin,
-              tokenExchanges: updatedToken
-            }
+              tokenExchanges: updatedToken,
+              selectedExchanges: Object.keys(exchanges).reduce(
+                (acc, key) => ({
+                  ...acc,
+                  [key]: updatedStablecoin[key] || updatedToken[key],
+                }),
+                {}
+              ),
+            },
           }));
         }
-      }
+      },
     }),
     {
       name: STORAGE_KEYS.USER_PREFERENCES,
       partialize: (state) => ({
-        filters: state.filters
-      })
+        filters: state.filters,
+      }),
     }
   )
 );

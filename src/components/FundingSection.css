@@ -298,6 +298,13 @@
   line-height: 1;
 }
 
+.no-exchanges {
+  padding: var(--spacing-4);
+  text-align: center;
+  color: rgb(var(--foreground-secondary));
+  font-size: 0.875rem;
+}
+
 .load-more-message,
 .empty-message {
   text-align: center;

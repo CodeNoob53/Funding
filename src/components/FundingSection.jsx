@@ -11,32 +11,32 @@ import useAppStore from '../store/appStore';
 import { UI_CONFIG } from '../config/appConfig';
 
 function FundingSection({ onToggleFilters }) {
-  // Отримуємо дані з стору
-  const { 
-    fundingData, 
-    isLoading, 
-    error, 
-    setSelectedToken, 
+  const {
+    fundingData,
+    isLoading,
+    error,
+    setSelectedToken,
     selectRate,
-    availableExchanges, 
+    availableExchanges,
+    sortedExchangeKeys,
     setAvailableExchanges,
-    filters
-  } = useAppStore(state => ({
+    filters,
+  } = useAppStore((state) => ({
     fundingData: state.fundingData,
     isLoading: state.isLoading,
     error: state.error,
     setSelectedToken: state.setSelectedToken,
     selectRate: state.selectRate,
     availableExchanges: state.availableExchanges,
+    sortedExchangeKeys: state.sortedExchangeKeys,
     setAvailableExchanges: state.setAvailableExchanges,
-    filters: state.filters
+    filters: state.filters,
   }));
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('stablecoin');
   const [visibleCount, setVisibleCount] = useState(UI_CONFIG.MAX_VISIBLE_TOKENS);
 
-  // Деструктуризуємо фільтри
   const {
     enabled: filtersEnabled,
     minFundingRate,
@@ -48,60 +48,38 @@ function FundingSection({ onToggleFilters }) {
     sortOrder,
     exchangeSortBy,
     exchangeSortOrder,
-    selectedExchanges
+    stablecoinExchanges,
+    tokenExchanges,
   } = filters;
 
-  // Оновлюємо доступні біржі при зміні даних
   useEffect(() => {
     const newAvailableExchanges = {};
-    
     if (fundingData?.length) {
       fundingData.forEach((item) => {
         const list = activeTab === 'stablecoin' ? item.stablecoin_margin_list : item.token_margin_list;
         if (Array.isArray(list) && list.length > 0) {
           list.forEach((entry) => {
-            if (entry.exchange && entry.funding_rate !== undefined && entry.funding_rate !== null) {
+            if (entry.exchange && entry.funding_rate != null) {
               const exchange = entry.exchange.toLowerCase();
               if (!newAvailableExchanges[exchange]) {
                 newAvailableExchanges[exchange] = {
                   displayName: exchange.charAt(0).toUpperCase() + exchange.slice(1),
-                  logoUrl: entry.exchange_logo === 'https://cdn.coinglasscdn.com/static/blank.png' ? ExchangeCap : entry.exchange_logo,
+                  logoUrl: entry.exchange_logo || ExchangeCap,
                   activeCount: 0,
                   bestFR: entry.funding_rate,
                 };
               }
               newAvailableExchanges[exchange].activeCount += 1;
-              newAvailableExchanges[exchange].bestFR = Math.max(Math.abs(newAvailableExchanges[exchange].bestFR || 0), Math.abs(entry.funding_rate));
+              newAvailableExchanges[exchange].bestFR = Math.max(
+                Math.abs(newAvailableExchanges[exchange].bestFR || 0),
+                Math.abs(entry.funding_rate)
+              );
             }
           });
         }
       });
 
-      // Сортування бірж
-      const sortedExchanges = Object.keys(newAvailableExchanges)
-        .map((key) => ({ key, ...newAvailableExchanges[key] }))
-        .sort((a, b) => {
-          const multiplier = exchangeSortOrder === 'asc' ? 1 : -1;
-          if (exchangeSortBy === 'name') {
-            return multiplier * a.displayName.localeCompare(b.displayName);
-          } else if (exchangeSortBy === 'tokens') {
-            return multiplier * (a.activeCount - b.activeCount);
-          } else if (exchangeSortBy === 'bestFR') {
-            return multiplier * ((b.bestFR || 0) - (a.bestFR || 0));
-          }
-          return 0;
-        })
-        .reduce((acc, exchange) => {
-          acc[exchange.key] = {
-            displayName: exchange.displayName,
-            logoUrl: exchange.logoUrl,
-            activeCount: exchange.activeCount,
-            bestFR: exchange.bestFR,
-          };
-          return acc;
-        }, {});
-
-      setAvailableExchanges(sortedExchanges);
+      setAvailableExchanges(newAvailableExchanges, exchangeSortBy, exchangeSortOrder);
     }
   }, [fundingData, activeTab, exchangeSortBy, exchangeSortOrder, setAvailableExchanges]);
 
@@ -112,9 +90,7 @@ function FundingSection({ onToggleFilters }) {
       .filter((token) => {
         const matchesSearch = token.symbol?.toLowerCase().includes(searchQuery.toLowerCase()) || !searchQuery;
         const marginList = activeTab === 'stablecoin' ? token.stablecoin_margin_list : token.token_margin_list;
-        const hasMarginList = Array.isArray(marginList) && marginList.length > 0;
-
-        if (!hasMarginList || !matchesSearch) return false;
+        if (!Array.isArray(marginList) || !marginList.length || !matchesSearch) return false;
         if (!filtersEnabled) return true;
 
         return marginList.some((entry) => {
@@ -122,18 +98,20 @@ function FundingSection({ onToggleFilters }) {
           const interval = entry.funding_rate_interval;
           const status = entry.status;
           const exchange = entry.exchange.toLowerCase();
+          const isExchangeVisible =
+            activeTab === 'stablecoin' ? stablecoinExchanges[exchange] !== false : tokenExchanges[exchange] !== false;
 
-          if (rate === undefined || rate === null || !selectedExchanges[exchange]) return false;
+          if (rate == null || !isExchangeVisible) {
+            console.log(`Біржа ${exchange} не видима для ${activeTab}`, { isExchangeVisible });
+            return false;
+          }
 
           const matchesRateSign =
             rateSignFilter === 'all' ||
             (rateSignFilter === 'long' && rate > 0) ||
             (rateSignFilter === 'short' && rate < 0);
-
           const matchesInterval =
-            fundingInterval === 'all' ||
-            (fundingInterval !== 'all' && interval === parseInt(fundingInterval));
-
+            fundingInterval === 'all' || (fundingInterval !== 'all' && interval === parseInt(fundingInterval));
           const matchesStatus =
             statusFilter === 'all' ||
             (statusFilter === 'active' && status === 1) ||
@@ -144,42 +122,37 @@ function FundingSection({ onToggleFilters }) {
       })
       .map((token) => {
         const marginList = activeTab === 'stablecoin' ? token.stablecoin_margin_list : token.token_margin_list;
-
-        const filteredExchanges = Object.keys(availableExchanges)
+        const filteredExchanges = sortedExchangeKeys
+          .filter((key) =>
+            activeTab === 'stablecoin' ? stablecoinExchanges[key] !== false : tokenExchanges[key] !== false
+          )
           .map((key) => {
             const entry = marginList.find((e) => e.exchange?.toLowerCase() === key);
-            if (!entry || entry.funding_rate == null || !selectedExchanges[key]) return null;
+            if (!entry || entry.funding_rate == null) return null;
 
             const meetsRateSign =
               rateSignFilter === 'all' ||
               (rateSignFilter === 'long' && entry.funding_rate > 0) ||
               (rateSignFilter === 'short' && entry.funding_rate < 0);
-
             const meetsInterval =
               fundingInterval === 'all' ||
               (fundingInterval !== 'all' && entry.funding_rate_interval === parseInt(fundingInterval));
-
             const meetsStatus =
               statusFilter === 'all' ||
               (statusFilter === 'active' && entry.status === 1) ||
               (statusFilter === 'predicted' && entry.status === 2);
 
             if (!meetsRateSign || !meetsInterval || !meetsStatus) return null;
-
-            if (displayMode === 'option2') {
-              const meetsMinRate = Math.abs(entry.funding_rate) >= minFundingRate;
-              if (!meetsMinRate) return null;
-            }
+            if (displayMode === 'option2' && Math.abs(entry.funding_rate) < minFundingRate) return null;
 
             return { ...availableExchanges[key], data: entry, key };
           })
           .filter(Boolean);
 
-        const bestFR = marginList.reduce((max, entry) => {
-          return entry.funding_rate !== undefined && entry.funding_rate !== null
-            ? Math.max(max, Math.abs(entry.funding_rate))
-            : max;
-        }, 0);
+        const bestFR = marginList.reduce(
+          (max, entry) => (entry.funding_rate != null ? Math.max(max, Math.abs(entry.funding_rate)) : max),
+          0
+        );
 
         return {
           ...token,
@@ -191,15 +164,10 @@ function FundingSection({ onToggleFilters }) {
       .filter((token) => token.filteredExchanges.length > 0)
       .sort((a, b) => {
         const multiplier = sortOrder === 'asc' ? 1 : -1;
-        if (sortBy === 'symbol') {
-          return multiplier * a.symbol.localeCompare(b.symbol);
-        } else if (sortBy === 'fundingRate') {
-          return multiplier * (a.fundingRate - b.fundingRate);
-        } else if (sortBy === 'bestFR') {
-          return multiplier * (b.bestFR - a.bestFR);
-        } else {
-          return multiplier * (b.activeExchangesCount - a.activeExchangesCount);
-        }
+        if (sortBy === 'symbol') return multiplier * a.symbol.localeCompare(b.symbol);
+        if (sortBy === 'fundingRate') return multiplier * (a.fundingRate - b.fundingRate);
+        if (sortBy === 'bestFR') return multiplier * (b.bestFR - a.bestFR);
+        return multiplier * (b.activeExchangesCount - a.activeExchangesCount);
       });
   }, [
     fundingData,
@@ -209,8 +177,10 @@ function FundingSection({ onToggleFilters }) {
     rateSignFilter,
     filtersEnabled,
     availableExchanges,
+    sortedExchangeKeys,
     displayMode,
-    selectedExchanges,
+    stablecoinExchanges,
+    tokenExchanges,
     fundingInterval,
     statusFilter,
     sortBy,
@@ -231,13 +201,8 @@ function FundingSection({ onToggleFilters }) {
     setVisibleCount(UI_CONFIG.MAX_VISIBLE_TOKENS);
   }, [searchQuery, activeTab, minFundingRate, rateSignFilter, filtersEnabled, fundingInterval, statusFilter, sortBy, sortOrder]);
 
-  const handleTokenClick = useCallback((token) => {
-    setSelectedToken(token);
-  }, [setSelectedToken]);
-
-  const handleRateClick = useCallback((data) => {
-    selectRate(data);
-  }, [selectRate]);
+  const handleTokenClick = useCallback((token) => setSelectedToken(token), [setSelectedToken]);
+  const handleRateClick = useCallback((data) => selectRate(data), [selectRate]);
 
   return (
     <section className="funding-section card">
@@ -262,13 +227,7 @@ function FundingSection({ onToggleFilters }) {
         </div>
 
         <div className="funding-tabs">
-          <Tooltip
-            title="Показати ставки для Stablecoin Margin"
-            position="top"
-            trigger="mouseenter"
-            theme="light"
-            arrow
-          >
+          <Tooltip title="Показати ставки для Stablecoin Margin" position="top" trigger="mouseenter" theme="light" arrow>
             <button
               onClick={() => setActiveTab('stablecoin')}
               className={`tab-button ${activeTab === 'stablecoin' ? 'tab-button-active' : 'tab-button-inactive'}`}
@@ -276,13 +235,7 @@ function FundingSection({ onToggleFilters }) {
               Stablecoin Margin
             </button>
           </Tooltip>
-          <Tooltip
-            title="Показати ставки для Token Margin"
-            position="top"
-            trigger="mouseenter"
-            theme="light"
-            arrow
-          >
+          <Tooltip title="Показати ставки для Token Margin" position="top" trigger="mouseenter" theme="light" arrow>
             <button
               onClick={() => setActiveTab('token')}
               className={`tab-button ${activeTab === 'token' ? 'tab-button-active' : 'tab-button-inactive'}`}
@@ -290,17 +243,8 @@ function FundingSection({ onToggleFilters }) {
               Token Margin
             </button>
           </Tooltip>
-          <Tooltip
-            title="Відкрити фільтри"
-            position="top"
-            trigger="mouseenter"
-            theme="light"
-            arrow
-          >
-            <button
-              className="filter-button"
-              onClick={onToggleFilters}
-            >
+          <Tooltip title="Відкрити фільтри" position="top" trigger="mouseenter" theme="light" arrow>
+            <button className="filter-button" onClick={onToggleFilters}>
               <IoFilter size={20} />
             </button>
           </Tooltip>
@@ -313,31 +257,30 @@ function FundingSection({ onToggleFilters }) {
             <div className="error-message">{error}</div>
           </div>
         ) : filteredTokens.length === 0 && !isLoading ? (
-          <div className="funding-empty">
-            Немає даних для відображення. Перевірте вкладку або пошуковий запит.
-          </div>
+          <div className="funding-empty">Немає даних для відображення. Перевірте вкладку або пошуковий запит.</div>
         ) : (
           <div className="funding-table-container" onScroll={handleScroll}>
             <table className="funding-table">
               <thead className="funding-table-header">
                 <tr className="funding-table-row">
                   <th className="coin-header">Монета</th>
-                  {Object.keys(availableExchanges).length === 0 ? (
+                  {sortedExchangeKeys.length === 0 ? (
                     <th className="exchange-header">Немає доступних бірж</th>
                   ) : (
-                    Object.keys(availableExchanges)
-                      .filter((key) => selectedExchanges[key] !== false)
+                    sortedExchangeKeys
+                      .filter((key) =>
+                        activeTab === 'stablecoin' ? stablecoinExchanges[key] !== false : tokenExchanges[key] !== false
+                      )
                       .map((key) => (
                         <th key={key} className="exchange-header">
                           <span className="exchange-header-content">
                             <img
-                              src={availableExchanges[key].logoUrl}
-                              alt={`${availableExchanges[key].displayName} logo`}
+                              src={availableExchanges[key]?.logoUrl || ExchangeCap}
+                              alt={`${availableExchanges[key]?.displayName} logo`}
                               className="exchange-header-logo"
+                              onError={(e) => (e.target.src = ExchangeCap)}
                             />
-                            <span className="exchange-header-name">
-                              {availableExchanges[key].displayName}
-                            </span>
+                            <span className="exchange-header-name">{availableExchanges[key]?.displayName}</span>
                           </span>
                         </th>
                       ))
@@ -357,11 +300,9 @@ function FundingSection({ onToggleFilters }) {
                 {!isLoading && filteredTokens.length === 0 && (
                   <tr>
                     <td
-                      colSpan={
-                        Object.keys(availableExchanges).length > 0
-                          ? Object.keys(availableExchanges).filter((key) => selectedExchanges[key] !== false).length + 1
-                          : 2
-                      }
+                      colSpan={sortedExchangeKeys.filter((key) =>
+                        activeTab === 'stablecoin' ? stablecoinExchanges[key] !== false : tokenExchanges[key] !== false
+                      ).length + 1}
                       className="empty-message"
                     >
                       Нічого не знайдено
@@ -371,11 +312,9 @@ function FundingSection({ onToggleFilters }) {
                 {filteredTokens.length > visibleCount && (
                   <tr>
                     <td
-                      colSpan={
-                        Object.keys(availableExchanges).length > 0
-                          ? Object.keys(availableExchanges).filter((key) => selectedExchanges[key] !== false).length + 1
-                          : 2
-                      }
+                      colSpan={sortedExchangeKeys.filter((key) =>
+                        activeTab === 'stablecoin' ? stablecoinExchanges[key] !== false : tokenExchanges[key] !== false
+                      ).length + 1}
                       className="load-more-message"
                     >
                       Прокрутіть вниз, щоб завантажити більше...
@@ -391,9 +330,8 @@ function FundingSection({ onToggleFilters }) {
   );
 }
 
-
-
 FundingSection.propTypes = {
   onToggleFilters: PropTypes.func.isRequired,
 };
+
 export default FundingSection;
