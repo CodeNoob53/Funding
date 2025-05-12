@@ -31,8 +31,10 @@ const TokenItem = memo(function TokenItem({ token, marginType, onClick, onRateCl
     return minutes === 0 ? `${hours}г` : `${hours}г ${minutes}хв`;
   };
 
+  // Отримуємо список даних залежно від marginType
   const marginList = marginType === 'stablecoin' ? token.stablecoin_margin_list : token.token_margin_list;
 
+  // Створюємо мапу бірж для швидкого доступу до даних
   const exchangeData = Array.isArray(marginList)
     ? marginList.reduce((acc, entry) => {
         if (entry.exchange) {
@@ -42,7 +44,7 @@ const TokenItem = memo(function TokenItem({ token, marginType, onClick, onRateCl
             next_funding_time: entry.next_funding_time,
             predicted_rate: entry.predicted_rate,
             price: entry.price,
-            exchange_logo: entry.exchange_logo || 'https://via.placeholder.com/20',
+            exchange_logo: entry.exchange_logo,
             status: entry.status,
           };
         }
@@ -50,6 +52,7 @@ const TokenItem = memo(function TokenItem({ token, marginType, onClick, onRateCl
       }, {})
     : {};
 
+  // Визначаємо джерело для іконки токена
   const tokenLogoSrc =
     token.symbolLogo && token.symbolLogo !== 'https://cdn.coinglasscdn.com/static/blank.png'
       ? token.symbolLogo
@@ -112,18 +115,15 @@ const TokenItem = memo(function TokenItem({ token, marginType, onClick, onRateCl
                     {formatRate(rate)}
                     {isPredicted ? '*' : ''}
                   </span>
-                  {predictedRate !== undefined &&
-                    predictedRate !== null &&
-                    predictedRate !== rate &&
-                    !isPredicted && (
-                      <span
-                        className={`rate-predicted ${
-                          predictedRate > 0 ? 'rate-positive' : predictedRate < 0 ? 'rate-negative' : 'rate-neutral'
-                        }`}
-                      >
-                        Прогноз: {formatRate(predictedRate)}
-                      </span>
-                    )}
+                  {predictedRate !== undefined && predictedRate !== null && predictedRate !== rate && !isPredicted && (
+                    <span
+                      className={`rate-predicted ${
+                        predictedRate > 0 ? 'rate-positive' : predictedRate < 0 ? 'rate-negative' : 'rate-neutral'
+                      }`}
+                    >
+                      Прогноз: {formatRate(predictedRate)}
+                    </span>
+                  )}
                   {(interval || nextIn) && (
                     <span className="rate-interval">
                       {interval ? `${interval}г` : ''}

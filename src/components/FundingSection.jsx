@@ -64,7 +64,10 @@ function FundingSection({ onToggleFilters }) {
               if (!newAvailableExchanges[exchange]) {
                 newAvailableExchanges[exchange] = {
                   displayName: exchange.charAt(0).toUpperCase() + exchange.slice(1),
-                  logoUrl: entry.exchange_logo || ExchangeCap,
+                  logoUrl:
+                    entry.exchange_logo === 'https://cdn.coinglasscdn.com/static/blank.png'
+                      ? ExchangeCap
+                      : entry.exchange_logo,
                   activeCount: 0,
                   bestFR: entry.funding_rate,
                 };
@@ -101,10 +104,7 @@ function FundingSection({ onToggleFilters }) {
           const isExchangeVisible =
             activeTab === 'stablecoin' ? stablecoinExchanges[exchange] !== false : tokenExchanges[exchange] !== false;
 
-          if (rate == null || !isExchangeVisible) {
-            console.log(`Біржа ${exchange} не видима для ${activeTab}`, { isExchangeVisible });
-            return false;
-          }
+          if (rate == null || !isExchangeVisible) return false;
 
           const matchesRateSign =
             rateSignFilter === 'all' ||
@@ -194,7 +194,7 @@ function FundingSection({ onToggleFilters }) {
         setVisibleCount((prev) => Math.min(prev + UI_CONFIG.TOKENS_LOAD_STEP, filteredTokens.length));
       }
     },
-    [filteredTokens.length, visibleCount]
+    [filteredTokens.length]
   );
 
   useEffect(() => {
@@ -275,10 +275,9 @@ function FundingSection({ onToggleFilters }) {
                         <th key={key} className="exchange-header">
                           <span className="exchange-header-content">
                             <img
-                              src={availableExchanges[key]?.logoUrl || ExchangeCap}
+                              src={availableExchanges[key]?.logoUrl}
                               alt={`${availableExchanges[key]?.displayName} logo`}
                               className="exchange-header-logo"
-                              onError={(e) => (e.target.src = ExchangeCap)}
                             />
                             <span className="exchange-header-name">{availableExchanges[key]?.displayName}</span>
                           </span>
