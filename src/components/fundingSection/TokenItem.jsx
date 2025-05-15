@@ -4,7 +4,7 @@ import { memo } from 'react';
 import './TokenItem.css';
 import dayjs from 'dayjs';
 import TokenCap from '../assets/cap/TokenCap.avif';
-import useAppStore from '../store/appStore';
+import useAppStore from '../../store/appStore';
 
 const TokenItem = memo(function TokenItem({ token, marginType, onClick, onRateClick }) {
   const { sortedExchangeKeys, filters } = useAppStore((state) => ({
