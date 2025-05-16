@@ -1,4 +1,4 @@
-// src/components/FundingSection.jsx
+// src/components/fundingSection/FundingSection.jsx
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import TokenItem from './TokenItem';
@@ -6,9 +6,9 @@ import './FundingSection.css';
 import { IoFilter } from 'react-icons/io5';
 import { Tooltip } from 'react-tippy';
 import 'react-tippy/dist/tippy.css';
-import ExchangeCap from '../assets/cap/ExchangeCap.avif';
-import useAppStore from '../store/appStore';
-import { UI_CONFIG } from '../config/appConfig';
+import ExchangeCap from '../../assets/cap/ExchangeCap.avif';
+import useAppStore from '../../store/appStore';
+import { UI_CONFIG } from '../../config/appConfig';
 
 function FundingSection({ onToggleFilters }) {
   const {

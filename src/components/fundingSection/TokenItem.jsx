@@ -1,9 +1,9 @@
-// src/components/TokenItem.jsx
+// src/components/fundingSection/TokenItem.jsx
 import PropTypes from 'prop-types';
 import { memo } from 'react';
 import './TokenItem.css';
 import dayjs from 'dayjs';
-import TokenCap from '../assets/cap/TokenCap.avif';
+import TokenCap from '../../assets/cap/TokenCap.avif';
 import useAppStore from '../../store/appStore';
 
 const TokenItem = memo(function TokenItem({ token, marginType, onClick, onRateClick }) {

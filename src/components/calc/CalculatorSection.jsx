@@ -1,8 +1,8 @@
-// src/components/CalculatorSection.jsx
+// src/components/calc/CalculatorSection.jsx
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import CalculatorForm from './calc/CalculatorForm';
-import CalculationResults from './calc/CalculationResults';
+import CalculatorForm from './CalculatorForm';
+import CalculationResults from './CalculationResults';
 import './CalculatorSection.css';
 
 function CalculatorSection({ selectedToken }) {

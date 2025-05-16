@@ -1,8 +1,8 @@
 // src/App.jsx
 import { useEffect } from 'react';
 import Header from './components/Header';
-import FundingSection from './components/FundingSection';
-import CalculatorSection from './components/CalculatorSection';
+import FundingSection from './components/fundingSection/FundingSection';
+import CalculatorSection from './components/calc/CalculatorSection';
 import Footer from './components/Footer';
 import FilterPanel from './components/FilterPanel';
 import useThemeStore from './store/themeStore';

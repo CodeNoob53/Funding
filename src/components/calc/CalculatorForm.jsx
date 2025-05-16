@@ -1,3 +1,4 @@
+// src/components/calc/CalculatorForm.jsx
 import PropTypes from 'prop-types';
 import { FiBriefcase, FiDollarSign, FiPercent, FiTrendingUp, FiCreditCard } from 'react-icons/fi';
 import { TbTriangleFilled, TbTriangleInvertedFilled } from 'react-icons/tb';

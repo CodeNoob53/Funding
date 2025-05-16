@@ -34,10 +34,12 @@ function Header() {
           <div className="header-actions">
             <button 
               onClick={toggleTheme}
-              className="btn-ghost btn-icon"
+              className="btn-ghost btn-icon theme-toggle-btn"
               aria-label="Змінити тему"
             >
-              {isDarkMode ? <FiSun size={20} /> : <FiMoon size={20} />}
+              <span className="theme-icon">
+                {isDarkMode ? <FiSun /> : <FiMoon />}
+              </span>
             </button>
           </div>
         </div>
