@@ -1,6 +1,6 @@
 // src/components/fundingSection/TokenItem.jsx
 import PropTypes from 'prop-types';
-import { memo } from 'react';
+import { memo, useRef, useEffect, useState } from 'react';
 import './TokenItem.css';
 import dayjs from 'dayjs';
 import TokenCap from '../../assets/cap/TokenCap.avif';
@@ -30,6 +30,36 @@ const TokenItem = memo(function TokenItem({ token, marginType, onClick, onRateCl
     const minutes = diffMinutes % 60;
     return minutes === 0 ? `${hours}г` : `${hours}г ${minutes}хв`;
   };
+
+  // Стан для підсвічування cell
+  const [highlighted, setHighlighted] = useState({});
+  const prevExchangeData = useRef({});
+
+  useEffect(() => {
+    const marginList = marginType === 'stablecoin' ? token.stablecoin_margin_list : token.token_margin_list;
+    const newExchangeData = Array.isArray(marginList)
+      ? marginList.reduce((acc, entry) => {
+          if (entry.exchange) {
+            acc[entry.exchange.toLowerCase()] = entry.funding_rate;
+          }
+          return acc;
+        }, {})
+      : {};
+
+    const changed = {};
+    Object.keys(newExchangeData).forEach((key) => {
+      if (prevExchangeData.current[key] !== undefined && prevExchangeData.current[key] !== newExchangeData[key]) {
+        changed[key] = true;
+      }
+    });
+
+    if (Object.keys(changed).length > 0) {
+      setHighlighted(changed);
+      setTimeout(() => setHighlighted({}), 1000); // 1 секунда підсвічування
+    }
+
+    prevExchangeData.current = newExchangeData;
+  }, [token, marginType]);
 
   // Отримуємо список даних залежно від marginType
   const marginList = marginType === 'stablecoin' ? token.stablecoin_margin_list : token.token_margin_list;
@@ -97,7 +127,7 @@ const TokenItem = memo(function TokenItem({ token, marginType, onClick, onRateCl
           return (
             <td
               key={exchangeKey}
-              className="exchange-cell"
+              className={`exchange-cell${highlighted[exchangeKey] ? ' cell-updated' : ''}`}
               onClick={(e) => {
                 e.stopPropagation();
                 if (data) {

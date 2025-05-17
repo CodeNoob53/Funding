@@ -1,10 +1,9 @@
 // src/hooks/useFundingData.js
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { fetchFundingRates } from '../services/api';
 import socketService from '../services/socketService';
 import logger from '../services/logger';
 import useAppStore from '../store/appStore';
-import { API_CONFIG } from '../config/appConfig';
 
 // Змінено з 'const useFundingData' на 'export function useFundingData'
 export function useFundingData() {
@@ -12,13 +11,18 @@ export function useFundingData() {
     setFundingData, 
     setIsLoading, 
     setError,
-    isLoading
+
+    fundingData
   } = useAppStore(state => ({
     setFundingData: state.setFundingData,
     setIsLoading: state.setIsLoading,
     setError: state.setError,
-    isLoading: state.isLoading
+    isLoading: state.isLoading,
+    fundingData: state.fundingData
   }));
+
+  // Використовуємо ref для відстеження стану WebSocket
+  const wsInitialized = useRef(false);
 
   useEffect(() => {
     const loadFundingData = async () => {
@@ -29,6 +33,12 @@ export function useFundingData() {
         setFundingData(data);
         logger.info(`Дані про фандинг успішно завантажено (${data.length} записів)`);
         setError(null);
+
+        // Ініціалізуємо WebSocket тільки після успішного отримання початкових даних
+        if (!wsInitialized.current) {
+          initializeWebSocket();
+          wsInitialized.current = true;
+        }
       } catch (err) {
         const errorMessage = 'Не вдалося завантажити дані про фандинг';
         setError(errorMessage);
@@ -38,31 +48,43 @@ export function useFundingData() {
       }
     };
 
+    // Функція ініціалізації WebSocket
+    const initializeWebSocket = () => {
+      logger.info('Ініціалізація WebSocket підключення');
+      socketService.connect();
+      
+      // Обробка оновлень
+      socketService.on('dataUpdate', (update) => {
+        if (!update?.data?.length) return;
+        
+        logger.debug(`Отримано оновлення даних через WebSocket (${update.data.length} записів)`);
+        
+        // Оновлюємо тільки змінені дані
+        const updatedData = [...fundingData];
+        update.data.forEach((newItem) => {
+          const index = updatedData.findIndex(item => item.symbol === newItem.symbol);
+          if (index !== -1) {
+            updatedData[index] = newItem;
+          } else {
+            updatedData.push(newItem);
+          }
+        });
+        
+        setFundingData(updatedData);
+      });
+
+      // Підписка на оновлення
+      socketService.emit('subscribe');
+    };
+
     // Початкове завантаження
     loadFundingData();
-    
-    // Інтервал оновлення
-    const intervalId = setInterval(() => {
-      if (!document.hidden && !isLoading) { // Перевіряємо чи вкладка активна
-        loadFundingData();
-      } else {
-        logger.debug('Пропускаємо оновлення: вкладка неактивна або попереднє оновлення ще виконується');
-      }
-    }, API_CONFIG.CACHE_EXPIRY.FUNDING_DATA);
-
-    // Ініціалізація WebSocket
-    socketService.connect();
-    socketService.on('dataUpdate', (data) => {
-      if (data?.length) {
-        logger.info(`Отримано оновлення даних через WebSocket (${data.length} записів)`);
-        setFundingData(data);
-      }
-    });
 
     return () => {
-      logger.debug('Очищення інтервалу оновлення даних');
-      clearInterval(intervalId);
-      socketService.disconnect();
+      if (wsInitialized.current) {
+        socketService.disconnect();
+        wsInitialized.current = false;
+      }
     };
   }, []); // Запускаємо тільки один раз при монтуванні
 }

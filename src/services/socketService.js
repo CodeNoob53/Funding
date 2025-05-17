@@ -9,6 +9,7 @@ class SocketService {
     this.listeners = new Map();
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
+    this.subscribed = false;
   }
   
   // Ініціалізація з'єднання
@@ -37,6 +38,11 @@ class SocketService {
       this.reconnectAttempts = 0;
       logger.info('WebSocket підключено', { id: this.socket.id });
       this._notifyListeners('connect');
+      
+      // Повторна підписка при перепідключенні
+      if (this.subscribed) {
+        this.emit('subscribe');
+      }
     });
     
     this.socket.on('disconnect', (reason) => {
@@ -55,14 +61,14 @@ class SocketService {
       this.reconnectAttempts++;
     });
     
-    this.socket.on('initialData', (data) => {
-      logger.info('Отримано початкові дані WebSocket');
-      this._notifyListeners('initialData', data);
-    });
-    
     this.socket.on('dataUpdate', (data) => {
       logger.debug('Отримано оновлення даних WebSocket');
       this._notifyListeners('dataUpdate', data);
+    });
+
+    this.socket.on('error', (error) => {
+      logger.error('Помилка WebSocket', error);
+      this._notifyListeners('error', error);
     });
     
     return this;
@@ -95,6 +101,11 @@ class SocketService {
       logger.warn('Спроба відправити подію при відключеному WebSocket', { event });
       return false;
     }
+
+    if (event === 'subscribe') {
+      this.subscribed = true;
+    }
+
     this.socket.emit(event, data);
     return true;
   }
@@ -105,6 +116,7 @@ class SocketService {
       this.socket.disconnect();
       this.socket = null;
       this.connected = false;
+      this.subscribed = false;
       logger.info('WebSocket відключено вручну');
     }
     return this;
