@@ -1,0 +1,615 @@
+/* src/components/ConnectionStatus/ConnectionStatus.css */
+
+.connection-status {
+    position: fixed;
+    z-index: 1000;
+    font-family: var(--font-family-primary);
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+  }
+  
+  /* Позиціонування */
+  .connection-status.top-left {
+    top: 20px;
+    left: 20px;
+  }
+  
+  .connection-status.top-right {
+    top: 20px;
+    right: 20px;
+  }
+  
+  .connection-status.bottom-left {
+    bottom: 20px;
+    left: 20px;
+  }
+  
+  .connection-status.bottom-right {
+    bottom: 20px;
+    right: 20px;
+  }
+  
+  /* Індикатор */
+  .connection-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--color-card-bg);
+    border: 1px solid var(--color-border-light);
+    border-radius: 20px;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+  }
+  
+  .connection-indicator:hover {
+    background: var(--color-card-bg-hover);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+  }
+  
+  /* Статусна точка */
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    position: relative;
+  }
+  
+  .status-dot::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    border-radius: 50%;
+    opacity: 0.3;
+    animation: pulse 2s infinite;
+  }
+  
+  .status-dot.green {
+    background-color: #10b981;
+  }
+  
+  .status-dot.green::before {
+    background-color: #10b981;
+  }
+  
+  .status-dot.yellow {
+    background-color: #f59e0b;
+  }
+  
+  .status-dot.yellow::before {
+    background-color: #f59e0b;
+  }
+  
+  .status-dot.orange {
+    background-color: #f97316;
+  }
+  
+  .status-dot.orange::before {
+    background-color: #f97316;
+  }
+  
+  .status-dot.red {
+    background-color: #ef4444;
+  }
+  
+  .status-dot.red::before {
+    background-color: #ef4444;
+  }
+  
+  /* Анімація пульсації */
+  @keyframes pulse {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 0.3;
+    }
+    50% {
+      transform: scale(1.2);
+      opacity: 0.1;
+    }
+  }
+  
+  /* Текст статусу */
+  .status-text {
+    color: var(--color-text-primary);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  
+  /* Детальна панель */
+  .connection-details {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    margin-bottom: 10px;
+    width: 280px;
+    background: var(--color-card-bg);
+    border: 1px solid var(--color-border-light);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    animation: slideUp 0.3s ease;
+  }
+  
+  /* Позиціонування для різних кутів */
+  .connection-status.top-left .connection-details,
+  .connection-status.top-right .connection-details {
+    bottom: auto;
+    top: 100%;
+    margin-bottom: 0;
+    margin-top: 10px;
+    animation: slideDown 0.3s ease;
+  }
+  
+  .connection-status.bottom-left .connection-details,
+  .connection-status.top-left .connection-details {
+    right: auto;
+    left: 0;
+  }
+  
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Заголовок деталей */
+  .details-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid var(--color-border-light);
+    background: var(--color-card-header-bg);
+  }
+  
+  .details-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+  
+  .close-button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .close-button:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text-primary);
+  }
+  
+  /* Контент деталей */
+  .details-content {
+    padding: 16px;
+  }
+  
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+  }
+  
+  .detail-row:not(:last-child) {
+    border-bottom: 1px solid var(--color-border-ultralight);
+  }
+  
+  .detail-label {
+    color: var(--color-text-secondary);
+    font-weight: 500;
+  }
+  
+  .detail-value {
+    color: var(--color-text-primary);
+    font-weight: 600;
+    font-family: var(--font-family-mono);
+  }
+  
+  .detail-value.status-green {
+    color: #10b981;
+  }
+  
+  .detail-value.status-yellow {
+    color: #f59e0b;
+  }
+  
+  .detail-value.status-orange {
+    color: #f97316;
+  }
+  
+  .detail-value.status-red {
+    color: #ef4444;
+  }
+  
+  .detail-value.warning {
+    color: #f97316;
+    font-weight: 700;
+  }
+  
+  /* Футер деталей */
+  .details-footer {
+    padding: 12px 16px;
+    background: var(--color-card-footer-bg);
+    border-top: 1px solid var(--color-border-light);
+    text-align: center;
+  }
+  
+  .details-footer small {
+    color: var(--color-text-tertiary);
+    font-size: 0.75rem;
+  }
+  
+  /* Експандований стан */
+  .connection-status.expanded .connection-indicator {
+    background: var(--color-primary-faded);
+    border-color: var(--color-primary);
+  }
+  
+  /* ===== КНОПКА ПЕРЕПОДКЛЮЧЕННЯ ===== */
+  .reconnect-button {
+    background: none;
+    border: none;
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    margin-left: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .reconnect-button:hover {
+    background: var(--color-primary-faded);
+    transform: rotate(180deg);
+  }
+  
+  /* ===== СЕКЦІЇ ДЕТАЛЕЙ ===== */
+  .detail-section {
+    margin-bottom: 16px;
+  }
+  
+  .detail-section:last-child {
+    margin-bottom: 0;
+  }
+  
+  .detail-section h5 {
+    margin: 0 0 8px 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.8;
+  }
+  
+  /* ===== ІСТОРІЯ З'ЄДНАНЬ ===== */
+  .connection-history {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+  
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background: var(--color-bg-secondary);
+    border-radius: 4px;
+    font-size: 0.75rem;
+  }
+  
+  .history-status {
+    font-size: 0.875rem;
+  }
+  
+  .history-time {
+    color: var(--color-text-secondary);
+    font-family: var(--font-family-mono);
+  }
+  
+  .history-latency {
+    margin-left: auto;
+    color: var(--color-text-tertiary);
+    font-family: var(--font-family-mono);
+    font-size: 0.7rem;
+  }
+  
+  /* ===== DEBUG КНОПКИ ===== */
+  .debug-action-button {
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 8px;
+  }
+  
+  .debug-action-button:hover {
+    background: var(--color-primary-dark);
+    transform: translateY(-1px);
+  }
+  
+  /* ===== СПОВІЩЕННЯ ===== */
+  .connection-notification {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    width: 320px;
+    background: var(--color-notification-bg);
+    border: 1px solid var(--color-border-light);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    z-index: 1049;
+    animation: slideInFromTop 0.3s ease-out;
+    overflow: hidden;
+  }
+  
+  /* Типи сповіщень */
+  .notification-error {
+    border-left: 4px solid #ef4444;
+    --color-notification-bg: var(--color-error-bg);
+  }
+  
+  .notification-success {
+    border-left: 4px solid #10b981;
+    --color-notification-bg: var(--color-success-bg);
+  }
+  
+  .notification-warning {
+    border-left: 4px solid #f59e0b;
+    --color-notification-bg: var(--color-warning-bg);
+  }
+  
+  .notification-info {
+    border-left: 4px solid #3b82f6;
+    --color-notification-bg: var(--color-info-bg);
+  }
+  
+  .notification-content {
+    padding: 16px;
+  }
+  
+  .notification-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  
+  .notification-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+  
+  .notification-title {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--color-text-primary);
+    flex: 1;
+  }
+  
+  .notification-close {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .notification-close:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text-primary);
+  }
+  
+  .notification-message {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  
+  .notification-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  
+  .notification-action-button {
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .notification-action-button:hover {
+    background: var(--color-primary-dark);
+    transform: translateY(-1px);
+  }
+  
+  /* Прогрес бар для автозакрытия */
+  .notification-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: var(--color-primary);
+    animation: progressShrink 5s linear forwards;
+    opacity: 0.7;
+  }
+  
+  /* ===== АНІМАЦІЇ СПОВІЩЕНЬ ===== */
+  @keyframes slideInFromTop {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes progressShrink {
+    from {
+      width: 100%;
+    }
+    to {
+      width: 0%;
+    }
+  }
+  
+  /* ===== АДАПТИВНІСТЬ ДЛЯ СПОВІЩЕНЬ ===== */
+  @media (max-width: 480px) {
+    .connection-notification {
+      left: 10px;
+      right: 10px;
+      width: auto;
+      top: 60px;
+    }
+  }
+  
+  /* ===== ПОЗИЦІОНУВАННЯ СПОВІЩЕНЬ ===== */
+  .connection-status.top-left ~ .connection-notification,
+  .connection-status.top-right ~ .connection-notification {
+    top: 80px;
+  }
+  
+  .connection-status.bottom-left ~ .connection-notification,
+  .connection-status.bottom-right ~ .connection-notification {
+    top: auto;
+    bottom: 80px;
+  }
+  
+  .connection-status.top-left ~ .connection-notification,
+  .connection-status.bottom-left ~ .connection-notification {
+    left: 20px;
+    right: auto;
+  }
+  
+  /* ===== РОЗШИРЕНІ CSS ЗМІННІ ===== */
+  [data-theme="light"] .connection-status {
+    --color-bg-secondary: #f8fafc;
+    --color-error-bg: rgba(254, 242, 242, 0.95);
+    --color-success-bg: rgba(240, 253, 244, 0.95);
+    --color-warning-bg: rgba(255, 251, 235, 0.95);
+    --color-info-bg: rgba(239, 246, 255, 0.95);
+    --color-notification-bg: rgba(255, 255, 255, 0.95);
+  }
+  
+  [data-theme="dark"] .connection-status {
+    --color-bg-secondary: #374151;
+    --color-error-bg: rgba(127, 29, 29, 0.95);
+    --color-success-bg: rgba(6, 78, 59, 0.95);
+    --color-warning-bg: rgba(120, 53, 15, 0.95);
+    --color-info-bg: rgba(30, 58, 138, 0.95);
+    --color-notification-bg: rgba(31, 41, 55, 0.95);
+  }
+  
+  /* Адаптивність для мобільних */
+  @media (max-width: 480px) {
+    .connection-status {
+      bottom: 80px !important;
+      right: 10px !important;
+      left: auto !important;
+      top: auto !important;
+    }
+    
+    .connection-details {
+      width: calc(100vw - 20px);
+      right: -10px;
+    }
+    
+    .connection-status.bottom-left .connection-details {
+      right: -10px;
+      left: auto;
+    }
+  }
+  
+  /* Темна тема */
+  [data-theme="dark"] .connection-status {
+    --color-card-bg: #1f2937;
+    --color-card-bg-hover: #374151;
+    --color-card-header-bg: #111827;
+    --color-card-footer-bg: #111827;
+    --color-border-light: #374151;
+    --color-border-ultralight: #4b5563;
+    --color-text-primary: #f9fafb;
+    --color-text-secondary: #d1d5db;
+    --color-text-tertiary: #9ca3af;
+    --color-bg-hover: #4b5563;
+    --color-primary-faded: rgba(59, 130, 246, 0.1);
+    --color-primary: #3b82f6;
+  }
+  
+  /* Світла тема */
+  [data-theme="light"] .connection-status {
+    --color-card-bg: #ffffff;
+    --color-card-bg-hover: #f9fafb;
+    --color-card-header-bg: #f3f4f6;
+    --color-card-footer-bg: #f3f4f6;
+    --color-border-light: #e5e7eb;
+    --color-border-ultralight: #f3f4f6;
+    --color-text-primary: #111827;
+    --color-text-secondary: #6b7280;
+    --color-text-tertiary: #9ca3af;
+    --color-bg-hover: #f3f4f6;
+    --color-primary-faded: rgba(59, 130, 246, 0.1);
+    --color-primary: #3b82f6;
+  }

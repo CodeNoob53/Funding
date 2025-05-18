@@ -49,6 +49,7 @@
     text-align: center;
     vertical-align: middle;
     border-left: 1px solid rgba(var(--border), 0.5);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
   
   .rate-container {
@@ -56,6 +57,9 @@
     flex-direction: column;
     align-items: center;
     gap: var(--spacing-1);
+    padding: var(--spacing-1);
+    border-radius: var(--border-radius-sm);
+    transition: background-color 0.2s ease;
   }
   
   .rate-value {
@@ -78,6 +82,10 @@
   .rate-predicted {
     font-size: 0.75rem;
     color: rgba(var(--foreground), 0.7);
+    padding: 2px 6px;
+    border-radius: var(--border-radius-sm);
+    background: rgba(var(--primary), 0.1);
+    margin-top: 2px;
   }
   
   .rate-predicted-style {
@@ -88,10 +96,14 @@
   .rate-interval {
     font-size: 0.75rem;
     color: rgb(var(--foreground-secondary));
+    opacity: 0.8;
+    margin-top: 2px;
   }
   
   .rate-empty {
     color: rgba(var(--foreground), 0.3);
+    font-style: italic;
+    font-size: 0.875rem;
   }
   
   @media (min-width: 768px) {
@@ -120,11 +132,74 @@
 
 /* Додайте у TokenItem.css */
 .cell-updated {
-  animation: cellHighlight 1s;
-  background-color: #ffeaa7 !important;
+  animation: cellHighlight 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.cell-updated::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(var(--primary), 0.15),
+    rgba(var(--primary), 0.05)
+  );
+  opacity: 0;
+  animation: cellHighlightBefore 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
 }
 
 @keyframes cellHighlight {
-  0%   { background-color: #ffeaa7; }
-  100% { background-color: inherit; }
+  0% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 2px rgba(var(--primary), 0.2);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 2px rgba(var(--primary), 0.2);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: none;
+  }
+}
+
+@keyframes cellHighlightBefore {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Додаємо плавний перехід для всіх комірок */
+.exchange-cell:hover .rate-container {
+  background: rgba(var(--primary), 0.05);
+}
+
+/* Покращуємо стилі для прогнозованих значень */
+.rate-predicted {
+  font-size: 0.75rem;
+  color: rgba(var(--foreground), 0.7);
+  padding: 2px 6px;
+  border-radius: var(--border-radius-sm);
+  background: rgba(var(--primary), 0.1);
+  margin-top: 2px;
+}
+
+/* Покращуємо стилі для інтервалу */
+.rate-interval {
+  font-size: 0.75rem;
+  color: rgb(var(--foreground-secondary));
+  opacity: 0.8;
+  margin-top: 2px;
 }

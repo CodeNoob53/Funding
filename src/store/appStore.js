@@ -16,7 +16,31 @@ const useAppStore = create(
       availableExchanges: {},
       sortedExchangeKeys: [],
 
-      setFundingData: (data) => set({ fundingData: data }),
+      setFundingData: (data) => {
+        // Validate and ensure data is always an array
+        if (!data) {
+          logger.warn('setFundingData: received null or undefined data');
+          set({ fundingData: [] });
+          return;
+        }
+
+        if (!Array.isArray(data)) {
+          logger.warn('setFundingData: received non-array data:', data);
+          set({ fundingData: [] });
+          return;
+        }
+
+        // Validate each item in the array
+        const validatedData = data.filter(item => {
+          if (!item || typeof item !== 'object') {
+            logger.warn('setFundingData: invalid item in data:', item);
+            return false;
+          }
+          return true;
+        });
+
+        set({ fundingData: validatedData });
+      },
       setIsLoading: (isLoading) => set({ isLoading }),
       setError: (error) => set({ error }),
       setSelectedToken: (token) => {

@@ -1,4 +1,4 @@
-// src/components/fundingSection/FundingSection.jsx
+// src/components/fundingSection/FundingSection.jsx - Виправлена версія
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import TokenItem from './TokenItem';
@@ -9,6 +9,7 @@ import 'react-tippy/dist/tippy.css';
 import ExchangeCap from '../../assets/cap/ExchangeCap.avif';
 import useAppStore from '../../store/appStore';
 import { UI_CONFIG } from '../../config/appConfig';
+import logger from '../../services/logger';
 
 function FundingSection({ onToggleFilters }) {
   const {
@@ -53,8 +54,14 @@ function FundingSection({ onToggleFilters }) {
   } = filters;
 
   useEffect(() => {
+    // Захисна перевірка на масив
+    if (!Array.isArray(fundingData)) {
+      logger.warn('fundingData не є масивом в FundingSection:', fundingData);
+      return;
+    }
+
     const newAvailableExchanges = {};
-    if (fundingData?.length) {
+    if (fundingData.length) {
       fundingData.forEach((item) => {
         const list = activeTab === 'stablecoin' ? item.stablecoin_margin_list : item.token_margin_list;
         if (Array.isArray(list) && list.length > 0) {
@@ -87,13 +94,32 @@ function FundingSection({ onToggleFilters }) {
   }, [fundingData, activeTab, exchangeSortBy, exchangeSortOrder, setAvailableExchanges]);
 
   const filteredTokens = useMemo(() => {
-    if (!fundingData?.length) return [];
+    // Захисна перевірка: якщо fundingData не є масивом, повертаємо порожній масив
+    if (!Array.isArray(fundingData)) {
+      logger.warn('fundingData не є масивом у filteredTokens:', fundingData);
+      return [];
+    }
+
+    if (!fundingData.length) return [];
 
     return fundingData
       .filter((token) => {
+        // Додаткова перевірка на валідність токена
+        if (!token || typeof token !== 'object') {
+          logger.warn('Невалідний токен у fundingData:', token);
+          return false;
+        }
+
         const matchesSearch = token.symbol?.toLowerCase().includes(searchQuery.toLowerCase()) || !searchQuery;
         const marginList = activeTab === 'stablecoin' ? token.stablecoin_margin_list : token.token_margin_list;
-        if (!Array.isArray(marginList) || !marginList.length || !matchesSearch) return false;
+        
+        // Перевірка на валідність marginList
+        if (!Array.isArray(marginList)) {
+          logger.warn('marginList не є масивом для токена:', token.symbol);
+          return false;
+        }
+
+        if (!marginList.length || !matchesSearch) return false;
         if (!filtersEnabled) return true;
 
         return marginList.some((entry) => {
@@ -203,6 +229,25 @@ function FundingSection({ onToggleFilters }) {
 
   const handleTokenClick = useCallback((token) => setSelectedToken(token), [setSelectedToken]);
   const handleRateClick = useCallback((data) => selectRate(data), [selectRate]);
+
+  // Обробка випадку коли fundingData не є масивом
+  if (!Array.isArray(fundingData)) {
+    return (
+      <section className="funding-section card">
+        <div className="container">
+          <div className="funding-header">
+            <h2 className="funding-title">Ставки фінансування</h2>
+          </div>
+          <div className="funding-error">
+            <div className="error-message">
+              Помилка формату даних. Очікується масив, отримано: {typeof fundingData}
+            </div>
+            <small>Перевірте консоль для деталей</small>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="funding-section card">
