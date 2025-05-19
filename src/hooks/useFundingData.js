@@ -234,12 +234,12 @@ export function useFundingData() {
       return initPromise.current;
     }
 
-    logger.info("Ініціалізація WebSocket з'єднання");
+    logger.debug("Ініціалізація WebSocket з'єднання");
     
     initPromise.current = new Promise((resolve) => {
       // === ОБРОБКА ПОЧАТКОВИХ ДАНИХ ===
       socketService.on('initialData', (data) => {
-        logger.info('Отримано початкові дані через WebSocket');
+        logger.debug('Отримано початкові дані через WebSocket');
         
         if (!data) {
           logger.warn('[initialData] Отримано порожні дані через WebSocket');
@@ -331,12 +331,12 @@ export function useFundingData() {
 
       // === ОБРОБКА СТАТУСУ З'ЄДНАННЯ ===
       socketService.on('connect', () => {
-        logger.info('✅ WebSocket підключено успішно');
+        logger.debug('WebSocket підключено');
         setError(null);
       });
 
       socketService.on('disconnect', (reason) => {
-        logger.warn(`❌ WebSocket відключено: ${reason}`);
+        logger.debug(`WebSocket відключено: ${reason}`);
       });
 
       socketService.on('error', (error) => {

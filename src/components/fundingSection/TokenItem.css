@@ -15,9 +15,15 @@
     padding: var(--spacing-4);
     position: sticky;
     left: 0;
-    background: rgb(var(--card));
+    background: linear-gradient(
+      90deg,
+      rgba(var(--card), 0.98),
+      rgba(var(--card), 0.95)
+    );
     z-index: 4;
     vertical-align: middle;
+    border-right: 1px solid rgb(var(--border));
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
   }
   
   .token-info {

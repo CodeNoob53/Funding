@@ -94,7 +94,7 @@ const ConnectionStatus = ({ position = 'bottom-right', showNotifications = true 
       createdAt: now
     });
 
-    logger.info(`Сповіщення WebSocket: ${notificationData.title}`, {
+    logger.debug(`Сповіщення WebSocket: ${notificationData.title}`, {
       type: notificationData.type,
       message: notificationData.message
     });

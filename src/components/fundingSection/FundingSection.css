@@ -156,13 +156,13 @@
 
 /* #region Table */
 .funding-table-container {
+  position: relative;
   max-height: 600px;
-  overflow-y: auto;
-  overflow-x: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgb(var(--primary)) rgb(var(--border));
   border-radius: var(--border-radius-md);
   border: 1px solid rgb(var(--border));
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .funding-table {
@@ -185,9 +185,33 @@
   box-shadow: var(--shadow-sm);
 }
 
-.funding-table-row {
-  display: table-row;
-  transition: background 0.3s ease;
+.funding-table-body {
+  position: relative;
+  max-height: calc(600px - 60px); /* Віднімаємо висоту заголовка */
+  overflow-y: auto;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--primary)) rgb(var(--border));
+  display: block; /* Важливо для роботи скролу */
+}
+
+.funding-table-body::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.funding-table-body::-webkit-scrollbar-track {
+  background: rgb(var(--border));
+  border-radius: 4px;
+}
+
+.funding-table-body::-webkit-scrollbar-thumb {
+  background: rgb(var(--primary));
+  border-radius: 4px;
+}
+
+.funding-table-body::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--primary-dark));
 }
 
 .funding-table th {

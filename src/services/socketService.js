@@ -78,7 +78,7 @@ class SocketService {
       this.connected = true;
       this.isConnecting = false;
       this.reconnectAttempts = 0;
-      logger.info('WebSocket підключено', { id: this.socket.id });
+      logger.debug('WebSocket підключено', { id: this.socket.id });
       this._notifyListeners('connect');
       
       // Автоматична підписка при підключенні
@@ -117,7 +117,7 @@ class SocketService {
 
     // === ДАНІ ===
     this.socket.on('initialData', (data) => {
-      logger.info('Отримано початкові дані WebSocket');
+      logger.debug('Отримано початкові дані WebSocket');
       this._notifyListeners('initialData', data);
     });
     

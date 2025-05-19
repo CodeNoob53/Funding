@@ -304,7 +304,7 @@ function FundingSection({ onToggleFilters }) {
         ) : filteredTokens.length === 0 && !isLoading ? (
           <div className="funding-empty">Немає даних для відображення. Перевірте вкладку або пошуковий запит.</div>
         ) : (
-          <div className="funding-table-container" onScroll={handleScroll}>
+          <div className="funding-table-container">
             <table className="funding-table">
               <thead className="funding-table-header">
                 <tr className="funding-table-row">
@@ -331,42 +331,46 @@ function FundingSection({ onToggleFilters }) {
                   )}
                 </tr>
               </thead>
-              <tbody>
-                {filteredTokens.slice(0, visibleCount).map((token) => (
-                  <TokenItem
-                    key={`${token.symbol}-${activeTab}`}
-                    token={token}
-                    marginType={activeTab}
-                    onClick={handleTokenClick}
-                    onRateClick={handleRateClick}
-                  />
-                ))}
-                {!isLoading && filteredTokens.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={sortedExchangeKeys.filter((key) =>
-                        activeTab === 'stablecoin' ? stablecoinExchanges[key] !== false : tokenExchanges[key] !== false
-                      ).length + 1}
-                      className="empty-message"
-                    >
-                      Нічого не знайдено
-                    </td>
-                  </tr>
-                )}
-                {filteredTokens.length > visibleCount && (
-                  <tr>
-                    <td
-                      colSpan={sortedExchangeKeys.filter((key) =>
-                        activeTab === 'stablecoin' ? stablecoinExchanges[key] !== false : tokenExchanges[key] !== false
-                      ).length + 1}
-                      className="load-more-message"
-                    >
-                      Прокрутіть вниз, щоб завантажити більше...
-                    </td>
-                  </tr>
-                )}
-              </tbody>
             </table>
+            <div className="funding-table-body" onScroll={handleScroll}>
+              <table className="funding-table">
+                <tbody>
+                  {filteredTokens.slice(0, visibleCount).map((token) => (
+                    <TokenItem
+                      key={`${token.symbol}-${activeTab}`}
+                      token={token}
+                      marginType={activeTab}
+                      onClick={handleTokenClick}
+                      onRateClick={handleRateClick}
+                    />
+                  ))}
+                  {!isLoading && filteredTokens.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={sortedExchangeKeys.filter((key) =>
+                          activeTab === 'stablecoin' ? stablecoinExchanges[key] !== false : tokenExchanges[key] !== false
+                        ).length + 1}
+                        className="empty-message"
+                      >
+                        Нічого не знайдено
+                      </td>
+                    </tr>
+                  )}
+                  {filteredTokens.length > visibleCount && (
+                    <tr>
+                      <td
+                        colSpan={sortedExchangeKeys.filter((key) =>
+                          activeTab === 'stablecoin' ? stablecoinExchanges[key] !== false : tokenExchanges[key] !== false
+                        ).length + 1}
+                        className="load-more-message"
+                      >
+                        Прокрутіть вниз, щоб завантажити більше...
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
