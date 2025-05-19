@@ -10,7 +10,143 @@ const requestCache = {
   promise: null,
   timestamp: null,
   data: null,
-  CACHE_DURATION: 5000 // 5 секунд
+  CACHE_DURATION: 5000, // 5 секунд
+  // Функція для оновлення кешу з урахуванням часткових оновлень
+  updateCache: function(partialUpdate) {
+    if (!this.data) return false;
+    
+    try {
+      const updatedData = [...this.data];
+      let hasChanges = false;
+
+      partialUpdate.forEach((updatedSymbol) => {
+        if (!updatedSymbol || typeof updatedSymbol !== 'object') return;
+
+        const index = updatedData.findIndex(item => item.symbol === updatedSymbol.symbol);
+        
+        if (index !== -1) {
+          const currentSymbol = updatedData[index];
+          const newSymbol = { ...currentSymbol };
+          
+          // Оновлення stablecoin_margin_list
+          if (updatedSymbol.uMarginList && Array.isArray(updatedSymbol.uMarginList)) {
+            newSymbol.stablecoin_margin_list = [...(newSymbol.stablecoin_margin_list || [])];
+            updatedSymbol.uMarginList.forEach(updatedExchange => {
+              if (!updatedExchange || typeof updatedExchange !== 'object') return;
+
+              const exchangeIndex = newSymbol.stablecoin_margin_list.findIndex(
+                ex => ex.exchange === updatedExchange.exchangeName
+              );
+              
+              const newExchangeData = {
+                exchange: updatedExchange.exchangeName,
+                funding_rate: updatedExchange.rate,
+                funding_rate_interval: updatedExchange.fundingIntervalHours,
+                next_funding_time: updatedExchange.nextFundingTime,
+                predicted_rate: updatedExchange.predictedRate,
+                price: updatedExchange.price,
+                exchange_logo: updatedExchange.exchangeLogo,
+                status: updatedExchange.status,
+              };
+              
+              if (exchangeIndex !== -1) {
+                newSymbol.stablecoin_margin_list[exchangeIndex] = {
+                  ...newSymbol.stablecoin_margin_list[exchangeIndex],
+                  ...newExchangeData
+                };
+              } else {
+                newSymbol.stablecoin_margin_list.push(newExchangeData);
+              }
+              hasChanges = true;
+            });
+          }
+          
+          // Оновлення token_margin_list
+          if (updatedSymbol.cMarginList && Array.isArray(updatedSymbol.cMarginList)) {
+            newSymbol.token_margin_list = [...(newSymbol.token_margin_list || [])];
+            updatedSymbol.cMarginList.forEach(updatedExchange => {
+              if (!updatedExchange || typeof updatedExchange !== 'object') return;
+
+              const exchangeIndex = newSymbol.token_margin_list.findIndex(
+                ex => ex.exchange === updatedExchange.exchangeName
+              );
+              
+              const newExchangeData = {
+                exchange: updatedExchange.exchangeName,
+                funding_rate: updatedExchange.rate,
+                funding_rate_interval: updatedExchange.fundingIntervalHours,
+                next_funding_time: updatedExchange.nextFundingTime,
+                predicted_rate: updatedExchange.predictedRate,
+                price: updatedExchange.price,
+                exchange_logo: updatedExchange.exchangeLogo,
+                status: updatedExchange.status,
+              };
+              
+              if (exchangeIndex !== -1) {
+                newSymbol.token_margin_list[exchangeIndex] = {
+                  ...newSymbol.token_margin_list[exchangeIndex],
+                  ...newExchangeData
+                };
+              } else {
+                newSymbol.token_margin_list.push(newExchangeData);
+              }
+              hasChanges = true;
+            });
+          }
+          
+          if (updatedSymbol.uIndexPrice !== undefined) {
+            newSymbol.indexPrice = updatedSymbol.uIndexPrice;
+            hasChanges = true;
+          }
+          
+          if (hasChanges) {
+            updatedData[index] = newSymbol;
+          }
+        } else if (updatedSymbol.symbol && (updatedSymbol.uMarginList || updatedSymbol.cMarginList)) {
+          const formattedSymbol = {
+            symbol: updatedSymbol.symbol,
+            symbolLogo: updatedSymbol.symbolLogo,
+            stablecoin_margin_list: Array.isArray(updatedSymbol.uMarginList) ? 
+              updatedSymbol.uMarginList.map(ex => ({
+                exchange: ex.exchangeName,
+                funding_rate: ex.rate,
+                funding_rate_interval: ex.fundingIntervalHours,
+                next_funding_time: ex.nextFundingTime,
+                predicted_rate: ex.predictedRate,
+                price: ex.price,
+                exchange_logo: ex.exchangeLogo,
+                status: ex.status,
+              })) : [],
+            token_margin_list: Array.isArray(updatedSymbol.cMarginList) ? 
+              updatedSymbol.cMarginList.map(ex => ({
+                exchange: ex.exchangeName,
+                funding_rate: ex.rate,
+                funding_rate_interval: ex.fundingIntervalHours,
+                next_funding_time: ex.nextFundingTime,
+                predicted_rate: ex.predictedRate,
+                price: ex.price,
+                exchange_logo: ex.exchangeLogo,
+                status: ex.status,
+              })) : [],
+            indexPrice: updatedSymbol.uIndexPrice,
+            fundingRate: 0
+          };
+          updatedData.push(formattedSymbol);
+          hasChanges = true;
+        }
+      });
+
+      if (hasChanges) {
+        this.data = updatedData;
+        this.timestamp = Date.now();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      logger.error('[updateCache] Помилка при оновленні кешу:', error);
+      return false;
+    }
+  }
 };
 
 export function useFundingData() {
@@ -179,154 +315,17 @@ export function useFundingData() {
         
         logger.debug(`[dataUpdate] Отримано оновлення через WebSocket: ${update.data.length} змін`);
         
-        const currentData = fundingData || [];
+        // Оновлюємо кеш
+        const cacheUpdated = requestCache.updateCache(update.data);
         
-        if (!Array.isArray(currentData)) {
-          logger.warn('[dataUpdate] currentData не є масивом при оновленні WebSocket:', currentData);
-          setFundingData([]);
-          return;
-        }
-
-        try {
-          const updatedData = [...currentData];
-          let hasChanges = false;
-          
-          update.data.forEach((updatedSymbol) => {
-            if (!updatedSymbol || typeof updatedSymbol !== 'object') {
-              logger.warn('[dataUpdate] Невалідний символ у оновленні:', updatedSymbol);
-              return;
-            }
-
-            const index = updatedData.findIndex(item => item.symbol === updatedSymbol.symbol);
-            
-            if (index !== -1) {
-              const currentSymbol = updatedData[index];
-              const newSymbol = { ...currentSymbol };
-              
-              if (updatedSymbol.uMarginList && Array.isArray(updatedSymbol.uMarginList)) {
-                newSymbol.stablecoin_margin_list = [...(newSymbol.stablecoin_margin_list || [])];
-                updatedSymbol.uMarginList.forEach(updatedExchange => {
-                  if (!updatedExchange || typeof updatedExchange !== 'object') {
-                    logger.warn('[dataUpdate] Невалідний обмін у uMarginList:', updatedExchange);
-                    return;
-                  }
-
-                  const exchangeIndex = newSymbol.stablecoin_margin_list.findIndex(
-                    ex => ex.exchange === updatedExchange.exchangeName
-                  );
-                  
-                  const newExchangeData = {
-                    exchange: updatedExchange.exchangeName,
-                    funding_rate: updatedExchange.rate,
-                    funding_rate_interval: updatedExchange.fundingIntervalHours,
-                    next_funding_time: updatedExchange.nextFundingTime,
-                    predicted_rate: updatedExchange.predictedRate,
-                    price: updatedExchange.price,
-                    exchange_logo: updatedExchange.exchangeLogo,
-                    status: updatedExchange.status,
-                  };
-                  
-                  if (exchangeIndex !== -1) {
-                    newSymbol.stablecoin_margin_list[exchangeIndex] = {
-                      ...newSymbol.stablecoin_margin_list[exchangeIndex],
-                      ...newExchangeData
-                    };
-                  } else {
-                    newSymbol.stablecoin_margin_list.push(newExchangeData);
-                  }
-                  hasChanges = true;
-                });
-              }
-              
-              if (updatedSymbol.cMarginList && Array.isArray(updatedSymbol.cMarginList)) {
-                newSymbol.token_margin_list = [...(newSymbol.token_margin_list || [])];
-                updatedSymbol.cMarginList.forEach(updatedExchange => {
-                  if (!updatedExchange || typeof updatedExchange !== 'object') {
-                    logger.warn('[dataUpdate] Невалідний обмін у cMarginList:', updatedExchange);
-                    return;
-                  }
-
-                  const exchangeIndex = newSymbol.token_margin_list.findIndex(
-                    ex => ex.exchange === updatedExchange.exchangeName
-                  );
-                  
-                  const newExchangeData = {
-                    exchange: updatedExchange.exchangeName,
-                    funding_rate: updatedExchange.rate,
-                    funding_rate_interval: updatedExchange.fundingIntervalHours,
-                    next_funding_time: updatedExchange.nextFundingTime,
-                    predicted_rate: updatedExchange.predictedRate,
-                    price: updatedExchange.price,
-                    exchange_logo: updatedExchange.exchangeLogo,
-                    status: updatedExchange.status,
-                  };
-                  
-                  if (exchangeIndex !== -1) {
-                    newSymbol.token_margin_list[exchangeIndex] = {
-                      ...newSymbol.token_margin_list[exchangeIndex],
-                      ...newExchangeData
-                    };
-                  } else {
-                    newSymbol.token_margin_list.push(newExchangeData);
-                  }
-                  hasChanges = true;
-                });
-              }
-              
-              if (updatedSymbol.uIndexPrice !== undefined) {
-                newSymbol.indexPrice = updatedSymbol.uIndexPrice;
-                hasChanges = true;
-              }
-              
-              if (hasChanges) {
-                updatedData[index] = newSymbol;
-              }
-            } else if (updatedSymbol.symbol && (updatedSymbol.uMarginList || updatedSymbol.cMarginList)) {
-              const formattedSymbol = {
-                symbol: updatedSymbol.symbol,
-                symbolLogo: updatedSymbol.symbolLogo,
-                stablecoin_margin_list: Array.isArray(updatedSymbol.uMarginList) ? 
-                  updatedSymbol.uMarginList.map(ex => ({
-                    exchange: ex.exchangeName,
-                    funding_rate: ex.rate,
-                    funding_rate_interval: ex.fundingIntervalHours,
-                    next_funding_time: ex.nextFundingTime,
-                    predicted_rate: ex.predictedRate,
-                    price: ex.price,
-                    exchange_logo: ex.exchangeLogo,
-                    status: ex.status,
-                  })) : [],
-                token_margin_list: Array.isArray(updatedSymbol.cMarginList) ? 
-                  updatedSymbol.cMarginList.map(ex => ({
-                    exchange: ex.exchangeName,
-                    funding_rate: ex.rate,
-                    funding_rate_interval: ex.fundingIntervalHours,
-                    next_funding_time: ex.nextFundingTime,
-                    predicted_rate: ex.predictedRate,
-                    price: ex.price,
-                    exchange_logo: ex.exchangeLogo,
-                    status: ex.status,
-                  })) : [],
-                indexPrice: updatedSymbol.uIndexPrice,
-                fundingRate: 0
-              };
-              updatedData.push(formattedSymbol);
-              hasChanges = true;
-            } else {
-              logger.warn('[dataUpdate] Пропущено невалідний новий символ:', updatedSymbol);
-            }
+        if (cacheUpdated) {
+          // Оновлюємо стан додатку тільки якщо кеш був успішно оновлений
+          setFundingData(requestCache.data);
+          lastUpdateTime.current = Date.now();
+          logger.debug('[dataUpdate] Дані успішно оновлено через WebSocket:', { 
+            count: requestCache.data.length,
+            updatedSymbols: update.data.map(s => s.symbol).join(', ')
           });
-          
-          if (hasChanges) {
-            lastUpdateTime.current = Date.now();
-            logger.debug('[dataUpdate] Дані успішно оновлено через WebSocket:', { 
-              count: updatedData.length,
-              updatedSymbols: update.data.map(s => s.symbol).join(', ')
-            });
-            setFundingData(updatedData);
-          }
-        } catch (error) {
-          logger.error('[dataUpdate] Помилка при обробці оновлення WebSocket:', error);
         }
       });
 
@@ -362,7 +361,7 @@ export function useFundingData() {
     });
 
     return initPromise.current;
-  }, [setFundingData, setError, fundingData]);
+  }, [setFundingData, setError]);
 
   useEffect(() => {
     // Завантажуємо дані тільки при першому рендері
@@ -386,7 +385,7 @@ export function useFundingData() {
         wsInitialized.current = false;
       }
     };
-  }, []);
+  }, [loadFundingData, initializeWebSocket]);
 
   return {
     isWebSocketConnected: useCallback(() => socketService.isConnected(), []),

@@ -45,17 +45,17 @@ class SocketService {
     logger.info('Ініціалізація WebSocket підключення', { url: SOCKET_URL });
     
     this.connectionPromise = new Promise((resolve, reject) => {
-      this.socket = io(SOCKET_URL, {
-        auth: { apiKey },
-        reconnection: true,
-        reconnectionAttempts: this.maxReconnectAttempts,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        timeout: 10000,
-        transports: ['websocket', 'polling']
-      });
-      
-      this.setupEventHandlers();
+    this.socket = io(SOCKET_URL, {
+      auth: { apiKey },
+      reconnection: true,
+      reconnectionAttempts: this.maxReconnectAttempts,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 10000,
+      transports: ['websocket', 'polling']
+    });
+    
+    this.setupEventHandlers();
       
       // Додаємо обробники для Promise
       this.socket.once('connect', () => {
