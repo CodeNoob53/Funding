@@ -420,3 +420,61 @@
   box-shadow: 0 0 0 3px rgba(var(--primary), 0.3);
 }
 /* #endregion */
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.connection-status.connected {
+  background-color: rgba(46, 213, 115, 0.1);
+  color: #2ed573;
+}
+
+.connection-status.disconnected {
+  background-color: rgba(255, 71, 87, 0.1);
+  color: #ff4757;
+}
+
+.connection-status.error {
+  background-color: rgba(255, 159, 67, 0.1);
+  color: #ff9f43;
+}
+
+.connection-status .status-icon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.connection-status.connected .status-icon {
+  background-color: #2ed573;
+  box-shadow: 0 0 8px rgba(46, 213, 115, 0.5);
+}
+
+.connection-status.disconnected .status-icon {
+  background-color: #ff4757;
+  box-shadow: 0 0 8px rgba(255, 71, 87, 0.5);
+}
+
+.connection-status.error .status-icon {
+  background-color: #ff9f43;
+  box-shadow: 0 0 8px rgba(255, 159, 67, 0.5);
+}
+
+.connection-status .status-text {
+  text-transform: capitalize;
+}
+
+.connection-status .latency {
+  margin-left: auto;
+  font-size: 12px;
+  opacity: 0.8;
+}
