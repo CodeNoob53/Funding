@@ -107,8 +107,6 @@ export const fetchFundingRates = async () => {
     fundingDataCache.data = formattedData;
     fundingDataCache.timestamp = now;
     
-    logger.debug(`Отримано та кешовано ${formattedData.length} записів про фандинг`);
-    
     // Додаємо дебаг-інформацію про перший токен
     if (formattedData.length > 0) {
       const firstToken = formattedData[0];

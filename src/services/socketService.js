@@ -42,20 +42,20 @@ class SocketService {
     }
 
     this.isConnecting = true;
-    logger.info('Ініціалізація WebSocket підключення', { url: SOCKET_URL });
+    logger.debug('Ініціалізація WebSocket підключення', { url: SOCKET_URL });
     
     this.connectionPromise = new Promise((resolve, reject) => {
-    this.socket = io(SOCKET_URL, {
-      auth: { apiKey },
-      reconnection: true,
-      reconnectionAttempts: this.maxReconnectAttempts,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 10000,
-      transports: ['websocket', 'polling']
-    });
+      this.socket = io(SOCKET_URL, {
+        auth: { apiKey },
+        reconnection: true,
+        reconnectionAttempts: this.maxReconnectAttempts,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 10000,
+        transports: ['websocket', 'polling']
+      });
     
-    this.setupEventHandlers();
+      this.setupEventHandlers();
       
       // Додаємо обробники для Promise
       this.socket.once('connect', () => {
@@ -75,14 +75,16 @@ class SocketService {
   setupEventHandlers() {
     // === ОСНОВНІ ПОДІЇ ===
     this.socket.on('connect', () => {
-      this.connected = true;
-      this.isConnecting = false;
-      this.reconnectAttempts = 0;
-      logger.debug('WebSocket підключено', { id: this.socket.id });
-      this._notifyListeners('connect');
-      
-      // Автоматична підписка при підключенні
-      this.subscribe();
+      if (!this.connected) {  // Add check to prevent duplicate logs
+        this.connected = true;
+        this.isConnecting = false;
+        this.reconnectAttempts = 0;
+        logger.info('WebSocket підключено', { id: this.socket.id });
+        this._notifyListeners('connect');
+        
+        // Автоматична підписка при підключенні
+        this.subscribe();
+      }
     });
     
     this.socket.on('disconnect', (reason) => {
@@ -247,7 +249,6 @@ class SocketService {
       this.subscribed = false;
       this.connectionStats = null;
       this.latency = null;
-      logger.info('WebSocket відключено вручну');
     }
     return this;
   }
@@ -323,7 +324,7 @@ class SocketService {
 
       this.socket.emit('subscribe');
       this.subscribed = true;
-      logger.info('Підписка на оновлення даних');
+      logger.debug('Підписка на оновлення даних');
       this.subscriptionPromise = null;
       resolve(true);
     });

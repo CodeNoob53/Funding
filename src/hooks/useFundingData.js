@@ -197,15 +197,16 @@ export function useFundingData() {
           return [];
         }
         
-        logger.debug('[loadFundingData] Встановлюємо нові дані:', { count: data.length });
-        setFundingData(data);
-        lastUpdateTime.current = now;
-        
         // Оновлюємо кеш
         requestCache.data = data;
         requestCache.timestamp = now;
         
-        logger.info(`[loadFundingData] Дані про фандинг успішно завантажено: ${data.length} записів`);
+        // Встановлюємо дані
+        setFundingData(data);
+        lastUpdateTime.current = now;
+        
+        // Логуємо тільки один раз
+        logger.info(`Отримано та кешовано ${data.length} записів про фандинг`);
         return data;
       }).finally(() => {
         requestCache.promise = null;
@@ -331,16 +332,17 @@ export function useFundingData() {
 
       // === ОБРОБКА СТАТУСУ З'ЄДНАННЯ ===
       socketService.on('connect', () => {
-        logger.debug('WebSocket підключено');
+        // Remove duplicate log since it's handled in socketService
         setError(null);
       });
 
       socketService.on('disconnect', (reason) => {
-        logger.debug(`WebSocket відключено: ${reason}`);
+        // Remove duplicate log since it's handled in socketService
+        setError(null);
       });
 
       socketService.on('error', (error) => {
-        logger.error('❌ Помилка WebSocket:', error);
+        logger.error('Помилка WebSocket:', error);
         if (error.includes('API Key')) {
           setError('Помилка автентифікації WebSocket. Перевірте API ключ.');
         }
