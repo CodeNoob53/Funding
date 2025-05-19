@@ -12,7 +12,7 @@ export const STORAGE_KEYS = {
 export const DEFAULT_SETTINGS = {
   // Налаштування фільтрів
   filters: {
-    enabled: true,
+    enabled: false,
 
     // minFundingRate: 0.15
     // Мінімальна ставка фандингу для відображення
