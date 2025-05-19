@@ -24,6 +24,7 @@ const ConnectionStatus = ({ position = 'bottom-right', showNotifications = true 
   const lastLatency = useRef(null);
   const notificationTimeout = useRef(null);
   const lastNotificationTime = useRef(null);
+  const updateInterval = useRef(null);
   
   const {
     isWebSocketConnected,
@@ -107,7 +108,7 @@ const ConnectionStatus = ({ position = 'bottom-right', showNotifications = true 
         setNotification(null);
       }, duration);
     }
-  }, [showNotifications, getWebSocketLatency]); // Убрали latency из зависимостей
+  }, [showNotifications, getWebSocketLatency]);
 
   // Закрытие уведомления
   const closeNotification = () => {
@@ -129,6 +130,19 @@ const ConnectionStatus = ({ position = 'bottom-right', showNotifications = true 
       window.location.reload();
     }
   };
+
+  // Обновление статистики
+  const updateStats = useCallback(() => {
+    if (!isConnected) return;
+    
+    const currentStats = getConnectionStats();
+    setStats(currentStats);
+    
+    // Запрашиваем новую статистику каждые 30 секунд
+    if (Date.now() % 30000 < 5000) {
+      requestConnectionStats();
+    }
+  }, [isConnected, getConnectionStats, requestConnectionStats]);
 
   // Мониторинг состояния WebSocket  
   useEffect(() => {
@@ -178,21 +192,18 @@ const ConnectionStatus = ({ position = 'bottom-right', showNotifications = true 
   useEffect(() => {
     if (!isConnected) return;
 
-    const updateStats = () => {
-      const currentStats = getConnectionStats();
-      setStats(currentStats);
-      
-      // Запрашиваем новую статистику каждые 30 секунд
-      if (Date.now() % 30000 < 5000) {
-        requestConnectionStats();
+    // Начальное обновление
+    updateStats();
+
+    // Устанавливаем интервал обновления
+    updateInterval.current = setInterval(updateStats, 5000);
+
+    return () => {
+      if (updateInterval.current) {
+        clearInterval(updateInterval.current);
       }
     };
-
-    const interval = setInterval(updateStats, 5000);
-    updateStats(); // Начальное обновление
-
-    return () => clearInterval(interval);
-  }, [isConnected]); // Только isConnected в зависимостях
+  }, [isConnected, updateStats]);
 
   const getStatusColor = () => {
     if (!isConnected) return 'red';
