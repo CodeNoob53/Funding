@@ -150,16 +150,14 @@ const requestCache = {
 };
 
 export function useFundingData() {
-  const { 
-    setFundingData, 
-    setIsLoading, 
-    setError,
-    fundingData
+  const {
+    setFundingData,
+    setIsLoading,
+    setError
   } = useAppStore(state => ({
     setFundingData: state.setFundingData,
     setIsLoading: state.setIsLoading,
-    setError: state.setError,
-    fundingData: state.fundingData
+    setError: state.setError
   }));
 
   const wsInitialized = useRef(false);
@@ -336,7 +334,7 @@ export function useFundingData() {
         setError(null);
       });
 
-      socketService.on('disconnect', (reason) => {
+      socketService.on('disconnect', () => {
         // Remove duplicate log since it's handled in socketService
         setError(null);
       });

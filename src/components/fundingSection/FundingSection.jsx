@@ -220,7 +220,7 @@ function FundingSection({ onToggleFilters }) {
         setVisibleCount((prev) => Math.min(prev + UI_CONFIG.TOKENS_LOAD_STEP, filteredTokens.length));
       }
     },
-    [filteredTokens.length]
+    [filteredTokens.length, visibleCount]
   );
 
   useEffect(() => {

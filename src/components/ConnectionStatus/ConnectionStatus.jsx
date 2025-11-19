@@ -344,7 +344,7 @@ const ConnectionStatus = ({ position = 'bottom-right', showNotifications = true 
 
               {connectionHistory.length > 0 && (
                 <div className="detail-section">
-                  <h5>Історія з'єднань</h5>
+                  <h5>Історія з&apos;єднань</h5>
                   <div className="connection-history">
                     {connectionHistory.map((entry, index) => (
                       <div key={index} className="history-item">
